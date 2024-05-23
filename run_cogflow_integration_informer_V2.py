@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 import sys
 import torch
 import pandas as pd
@@ -89,13 +90,16 @@ print('Args in experiment:')
 print(args, '\n')
 
 
-def training(file_path: cf.input_path('parquet')) -> str:
+
+def training(file_path, args_json):
     import sys
     import os
     import pandas as pd
     import torch
     import numpy as np
     import cogflow as cf
+
+    args = argparse.Namespace(**json.loads(args_json))
 
     # Log the system path before appending directories
     print("System path before appending directories:")
@@ -216,22 +220,19 @@ def training(file_path: cf.input_path('parquet')) -> str:
 ##################################################### PIPELINE ###########################################################
 
 # Preprocessing Component
-def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('parquet')):
+def preprocess(file_path, output_file, args_json):
     import pandas as pd
-    import shutil
     import os
+    import json
 
     # Read the CSV file and convert it to parquet format
     df = pd.read_csv(file_path, header=0, sep=";")
     
-    # Serialize directory data into parquet file
-    directory_data = {
-        'exp': os.listdir('exp'),
-        'models': os.listdir('models'),
-        'utils': os.listdir('utils'),
-        'data': os.listdir('data')
-    }
-    df['directory_data'] = directory_data
+    # Deserialize args from JSON
+    args_dict = json.loads(args_json)
+    
+    # Add args to the dataframe
+    df['args'] = json.dumps(args_dict)
     
     df.to_parquet(output_file)
 
@@ -241,6 +242,7 @@ preprocess_op = cf.create_component_from_func(
     base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
     packages_to_install=[]
 )
+
 
 training_op = cf.create_component_from_func(
     func=training,
@@ -260,8 +262,6 @@ def serving(model_uri, name):
         print(f"Encountered an unexpected exception: {e}")
         raise
 
-
-
 kserve_op=cf.create_component_from_func(
     func=serving,
     output_component_file='kserve-component.yaml',
@@ -273,18 +273,25 @@ def getmodel(name):
     import cogflow as cf
     cf.get_model_url(name)
     
-
 getmodel_op=cf.create_component_from_func(func=getmodel,
         output_component_file='kserve-component.yaml',
         base_image='burntt/bo-informer:v1',
         packages_to_install=[])
 
+
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
-    preprocess_task = preprocess_op(file='/data/Gtrace2019/Gtrace_5m.csv')
+    args_json = json.dumps(vars(args))  # Serialize args to JSON
+
+    preprocess_task = preprocess_op(
+        file_path=file,
+        output_file='/tmp/preprocessed_data.parquet',  # Provide an output file path
+        args_json=args_json  # Pass the serialized args here
+    )
     
     train_task = training_op(
-        file=preprocess_task.outputs['output']
+        file_path=preprocess_task.outputs['output'],
+        args_json=args_json  # Pass the serialized args here
     )
     
     kserve_task = kserve_op(model_uri=train_task.outputs['Output'], name=isvc)

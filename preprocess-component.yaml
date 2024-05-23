@@ -1,8 +1,9 @@
 name: Preprocess
 inputs:
-- {name: file, type: CSV}
+- {name: file_path, type: CSV}
+- {name: args_json, type: String}
 outputs:
-- {name: output, type: parquet}
+- {name: output_file, type: parquet}  # Make sure the output name matches
 implementation:
   container:
     image: burntt/nby-cogflow-informer:latest
@@ -14,39 +15,41 @@ implementation:
       printf "%s" "$0" > "$program_path"
       python3 -u "$program_path" "$@"
     - |
+      import json
+
       def _make_parent_dirs_and_return_path(file_path: str):
           import os
           os.makedirs(os.path.dirname(file_path), exist_ok=True)
           return file_path
 
-      def preprocess(file_path, output_file):
+      def preprocess(file_path, output_file, args_json):
           import pandas as pd
-          import shutil
           import os
+          import json
 
           # Read the CSV file and convert it to parquet format
           df = pd.read_csv(file_path, header=0, sep=";")
 
-          # Serialize directory data into parquet file
-          directory_data = {
-              'exp': os.listdir('exp'),
-              'models': os.listdir('models'),
-              'utils': os.listdir('utils'),
-              'data': os.listdir('data')
-          }
-          df['directory_data'] = directory_data
-
+          # Deserialize args from JSON
+          args_dict = json.loads(args_json)
+          
+          # Add args to the dataframe
+          df['args'] = json.dumps(args_dict)
+          
           df.to_parquet(output_file)
 
       import argparse
       _parser = argparse.ArgumentParser(prog='Preprocess', description='')
-      _parser.add_argument("--file", dest="file_path", type=str, required=True, default=argparse.SUPPRESS)
-      _parser.add_argument("--output", dest="output_file", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--file_path", dest="file_path", type=str, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--output_file", dest="output_file", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--args_json", dest="args_json", type=str, required=True, default=argparse.SUPPRESS)
       _parsed_args = vars(_parser.parse_args())
 
       _outputs = preprocess(**_parsed_args)
     args:
-    - --file
-    - {inputPath: file}
-    - --output
-    - {outputPath: output}
+    - --file_path
+    - {inputPath: file_path}
+    - --output_file
+    - {outputPath: output_file}
+    - --args_json
+    - {inputValue: args_json}
