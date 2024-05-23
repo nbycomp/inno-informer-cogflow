@@ -110,8 +110,8 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
             cf.log_metric("rmse", test_results['rmse'])
             cf.log_metric("r2", test_results['r2'])
 
-            # print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            # preds = exp.predict(setting, True)
+            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            preds = exp.predict(setting, True)
 
             args_file_path = './args.txt'
             with open(args_file_path, 'w') as f:
@@ -121,6 +121,9 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             model.to(device)
+
+
+            print('ARGS before signature: ', args)
 
             example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()
             example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()
@@ -194,7 +197,7 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
         'data_path': 'Gtrace_5m.csv',
         'features': 'S',
         'target': 'avg_cpu_usage',
-        'freq': 't',
+        'freq': 'm',
         'checkpoints': './checkpoints',
         'seq_len': 24,
         'label_len': 24,

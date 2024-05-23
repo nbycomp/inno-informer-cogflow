@@ -165,6 +165,8 @@ def training(file_path: cf.input_path('parquet'))->str:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             model.to(device)
 
+            print(args)
+
             # Prepare input examples and move them to the correct device
             example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()
             example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()
