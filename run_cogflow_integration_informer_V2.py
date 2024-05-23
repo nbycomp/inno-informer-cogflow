@@ -1,13 +1,12 @@
 import argparse
 import os
+import sys
 import torch
 import pandas as pd
 import numpy as np
 import cogflow as cf
 import logging
-import sys
 import kserve
-
 
 print(sys.executable)
 
@@ -42,7 +41,7 @@ parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full]')
 parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
 parser.add_argument('--activation', type=str, default='gelu', help='activation')
-parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
+parser.add_argument('--output_attention', action='store_true', help='whether to output attention in encoder')
 parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
 parser.add_argument('--mix', action='store_false', help='use mix attention in generative decoder', default=True)
 parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
@@ -89,10 +88,6 @@ args.freq = args.freq[-1:]
 print('Args in experiment:')
 print(args, '\n')
 
-def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('parquet')):
-    df = pd.read_csv(file_path, header=0, sep=";")
-    df.columns = [c.lower().replace(' ', '_') for c in df.columns]
-    df.to_parquet(output_file)
 
 def training(file_path: cf.input_path('parquet')) -> str:
     import sys
@@ -101,14 +96,39 @@ def training(file_path: cf.input_path('parquet')) -> str:
     import torch
     import numpy as np
     import shutil
+
+    # Log the system path for debugging
+    print("System path before appending directories:")
+    print(sys.path)
     
     # Add directories to the system path
-    sys.path.append('./exp')
-    sys.path.append('./models')
-    sys.path.append('./utils')
-    sys.path.append('./data')
+    base_dir = os.path.dirname(file_path)
+    sys.path.append(os.path.join(base_dir, 'exp'))
+    sys.path.append(os.path.join(base_dir, 'models'))
+    sys.path.append(os.path.join(base_dir, 'utils'))
+    sys.path.append(os.path.join(base_dir, 'data'))
 
-    from exp.exp_informer import Exp_Informer
+    # Log the system path after appending directories
+    print("System path after appending directories:")
+    print(sys.path)
+
+    # Log the contents of each directory for debugging
+    directories_to_check = ['exp', 'models', 'utils', 'data']
+    for directory in directories_to_check:
+        full_path = os.path.join(base_dir, directory)
+        if os.path.exists(full_path):
+            print(f"Contents of {full_path}:")
+            print(os.listdir(full_path))
+        else:
+            print(f"Directory {full_path} does not exist.")
+
+    # Attempt to import the required module
+    try:
+        from exp.exp_informer import Exp_Informer
+        print("Import successful.")
+    except ModuleNotFoundError as e:
+        print(f"ModuleNotFoundError: {e}")
+        return "Module import failed"
 
     Exp = Exp_Informer
 
@@ -213,13 +233,25 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
     for directory in directories_to_copy:
         target_directory = os.path.join(os.path.dirname(output_file), directory)
         if os.path.exists(target_directory):
-            shutil.rmtree(target_directory)  # Remove existing directory
+            if os.path.isdir(target_directory):
+                shutil.rmtree(target_directory)  # Remove existing directory
+            else:
+                os.remove(target_directory)  # Remove existing file
         if os.path.exists(directory):
             shutil.copytree(directory, target_directory)
         else:
             print(f"Directory {directory} does not exist and will not be copied.")
+    
+    # Log the contents of the target directory for debugging
+    print("Contents of the target directory after copying:")
+    print(os.listdir(os.path.dirname(output_file)))
 
-
+    # Log the contents of each copied directory for debugging
+    for directory in directories_to_copy:
+        target_directory = os.path.join(os.path.dirname(output_file), directory)
+        if os.path.exists(target_directory):
+            print(f"Contents of {target_directory}:")
+            print(os.listdir(target_directory))
 
 preprocess_op = cf.create_component_from_func(
     func=preprocess,
@@ -227,7 +259,6 @@ preprocess_op = cf.create_component_from_func(
     base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
     packages_to_install=[]
 )
-
 
 training_op = cf.create_component_from_func(
     func=training,
@@ -237,7 +268,17 @@ training_op = cf.create_component_from_func(
 )
 
 def serving(model_uri, name):
-    cf.serve_model_v1(model_uri, name)
+    try:
+        import cogflow as cf
+        cf.serve_model_v1(model_uri, name)
+    except TypeError as e:
+        print(f"Encountered TypeError: {e}")
+        raise
+    except Exception as e:
+        print(f"Encountered an unexpected exception: {e}")
+        raise
+
+
 
 kserve_op=cf.create_component_from_func(
     func=serving,
@@ -247,7 +288,9 @@ kserve_op=cf.create_component_from_func(
 )
 
 def getmodel(name):
+    import cogflow as cf
     cf.get_model_url(name)
+    
 
 getmodel_op=cf.create_component_from_func(func=getmodel,
         output_component_file='kserve-component.yaml',

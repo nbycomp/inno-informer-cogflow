@@ -5,7 +5,7 @@ outputs:
 - {name: output, type: parquet}
 implementation:
   container:
-    image: burntt/bo-informer:v1
+    image: burntt/nby-cogflow-informer:latest
     command:
     - sh
     - -ec
@@ -36,11 +36,18 @@ implementation:
           for directory in directories_to_copy:
               target_directory = os.path.join(os.path.dirname(output_file), directory)
               if os.path.exists(target_directory):
-                  shutil.rmtree(target_directory)  # Remove existing directory
+                  if os.path.isdir(target_directory):
+                      shutil.rmtree(target_directory)  # Remove existing directory
+                  else:
+                      os.remove(target_directory)  # Remove existing file
               if os.path.exists(directory):
                   shutil.copytree(directory, target_directory)
               else:
                   print(f"Directory {directory} does not exist and will not be copied.")
+          
+          # Log the contents of the target directory for debugging
+          print("Contents of the target directory after copying:")
+          print(os.listdir(os.path.dirname(output_file)))
 
       import argparse
       _parser = argparse.ArgumentParser(prog='Preprocess', description='')

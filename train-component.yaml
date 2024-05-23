@@ -5,7 +5,7 @@ outputs:
 - {name: Output, type: String}
 implementation:
   container:
-    image: burntt/bo-informer:v1
+    image: burntt/nby-cogflow-informer:latest
     command:
     - sh
     - -ec
@@ -13,71 +13,162 @@ implementation:
       program_path=$(mktemp)
       printf "%s" "$0" > "$program_path"
       python3 -u "$program_path" "$@"
-    - "def training(file_path):\n    import sys\n    import os\n    import pandas\
-      \ as pd\n    import torch\n    import numpy as np\n    import shutil\n\n   \
-      \ # Add directories to the system path\n    sys.path.append('./exp')\n    sys.path.append('./models')\n\
-      \    sys.path.append('./utils')\n    sys.path.append('./data')\n\n    from exp.exp_informer\
-      \ import Exp_Informer\n\n    Exp = Exp_Informer\n\n    cf.autolog()\n    cf.pytorch.autolog()\n\
-      \    experiment_id = cf.set_experiment(\n        experiment_name=\"Custom Model\
-      \ Informer Time-Series\",\n    )\n    with cf.start_run('custom_model_run_informer')\
-      \ as run:\n        for ii in range(args.itr):\n            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(\n\
-      \                args.model, args.data, args.features, args.seq_len, args.label_len,\
-      \ args.pred_len, args.d_model, \n                args.n_heads, args.e_layers,\
-      \ args.d_layers, args.d_ff, args.attn, args.factor, args.embed, \n         \
-      \       args.distil, args.mix, args.des, ii\n            )\n\n            cf.log_param(\"\
-      seq_len\", args.seq_len)\n            cf.log_param(\"n_heads\", args.n_heads)\n\
-      \            cf.log_param(\"enc_lay\", args.e_layers)\n            cf.log_param(\"\
-      pred_len\", args.pred_len)\n            cf.log_param(\"dec_lay\", args.d_layers)\n\
-      \n            exp = Exp(args)\n            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))\n\
-      \            model = exp.train(setting)\n            print('>>>>>>>end training\
-      \ : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))\n\n            print('>>>>>>>testing\
-      \ : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))\n            test_results\
-      \ = exp.test(setting)\n\n            cf.log_metric(\"mae\", test_results['mae'])\n\
-      \            cf.log_metric(\"mse\", test_results['mse'])\n            cf.log_metric(\"\
-      rmse\", test_results['rmse'])\n            cf.log_metric(\"r2\", test_results['r2'])\n\
-      \n            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))\n\
-      \            preds = exp.predict(setting, True)\n\n            args_file_path\
-      \ = './args.txt'\n            with open(args_file_path, 'w') as f:\n       \
-      \         for arg, value in vars(args).items():\n                    f.write(f\"\
-      {arg}={value}\\n\")\n            artifacts = {\"args.txt\": args_file_path}\n\
-      \n            device = torch.device(\"cuda\" if torch.cuda.is_available() else\
-      \ \"cpu\")\n            model.to(device)\n\n            example_x_enc = torch.rand(1,\
-      \ args.seq_len, args.enc_in).to(device).float()\n            example_x_mark_enc\
-      \ = torch.rand(1, args.seq_len, 1).to(device).float()\n            example_x_dec\
-      \ = torch.rand(1, args.pred_len, args.dec_in).to(device).float()\n         \
-      \   example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()\n\
-      \            inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec,\
-      \ example_x_mark_dec)\n            output_example = model(*inputs_example)\n\
-      \n            inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor\
-      \ in inputs_example)\n            output_example_cpu = output_example.cpu().detach().numpy()\n\
-      \            inputs_example_cpu_no_batch = tuple(input_array[0] for input_array\
-      \ in inputs_example_cpu)\n            output_example_cpu_no_batch = output_example_cpu[0]\n\
-      \n            inputs_combined = np.concatenate([input_array.flatten() for input_array\
-      \ in inputs_example_cpu_no_batch], axis=-1)\n            input_df = pd.DataFrame(inputs_combined)\n\
-      \n            try:\n                signature = cf.models.infer_signature(input_df,\
-      \ output_example_cpu_no_batch)\n                print('Inference Signature Correctly\
-      \ Saved!')\n            except Exception as e:\n                print(f\"Error\
-      \ inferring signature: {e}\")\n                signature = None\n\n        \
-      \    model_info = cf.pyfunc.log_model(\n                artifact_path='informer-google-trace',\n\
-      \                python_model=exp,\n                artifacts=artifacts,\n \
-      \               pip_requirements=[],\n                input_example=input_df,\n\
-      \                signature=signature\n            )\n\n            print(f\"\
-      Run_id\", run.info.run_id)\n            print(f\"Artifact_uri\", run.info.artifact_uri)\n\
-      \            print(f\"Artifact_path\", run.info.artifact_uri)\n            registered_models_list\
-      \ = cf.search_registered_models()\n            print(registered_models_list)\n\
-      \    return f\"{run.info.artifact_uri}/{model_info.artifact_path}\"\n\ndef _serialize_str(str_value:\
-      \ str) -> str:\n    if not isinstance(str_value, str):\n        raise TypeError('Value\
-      \ \"{}\" has type \"{}\" instead of str.'.format(\n            str(str_value),\
-      \ str(type(str_value))))\n    return str_value\n\nimport argparse\n_parser =\
-      \ argparse.ArgumentParser(prog='Training', description='')\n_parser.add_argument(\"\
-      --file\", dest=\"file_path\", type=str, required=True, default=argparse.SUPPRESS)\n\
-      _parser.add_argument(\"----output-paths\", dest=\"_output_paths\", type=str,\
-      \ nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files = _parsed_args.pop(\"\
-      _output_paths\", [])\n\n_outputs = training(**_parsed_args)\n\n_outputs = [_outputs]\n\
-      \n_output_serializers = [\n    _serialize_str,\n\n]\n\nimport os\nfor idx, output_file\
-      \ in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n\
-      \    except OSError:\n        pass\n    with open(output_file, 'w') as f:\n\
-      \        f.write(_output_serializers[idx](_outputs[idx]))\n"
+    - |
+      def training(file_path):
+          import sys
+          import os
+          import pandas as pd
+          import torch
+          import numpy as np
+          import shutil
+
+          # Log the system path for debugging
+          print("System path before appending directories:")
+          print(sys.path)
+          
+          # Add directories to the system path
+          base_dir = os.path.dirname(file_path)
+          sys.path.append(os.path.join(base_dir, 'exp'))
+          sys.path.append(os.path.join(base_dir, 'models'))
+          sys.path.append(os.path.join(base_dir, 'utils'))
+          sys.path.append(os.path.join(base_dir, 'data'))
+
+          # Log the system path after appending directories
+          print("System path after appending directories:")
+          print(sys.path)
+
+          # Log the contents of each directory for debugging
+          directories_to_check = ['exp', 'models', 'utils', 'data']
+          for directory in directories_to_check:
+              full_path = os.path.join(base_dir, directory)
+              if os.path.exists(full_path):
+                  print(f"Contents of {full_path}:")
+                  print(os.listdir(full_path))
+              else:
+                  print(f"Directory {full_path} does not exist.")
+
+          # Attempt to import the required module
+          try:
+              from exp.exp_informer import Exp_Informer
+              print("Import successful.")
+          except ModuleNotFoundError as e:
+              print(f"ModuleNotFoundError: {e}")
+              return "Module import failed"
+
+          Exp = Exp_Informer
+
+          cf.autolog()
+          cf.pytorch.autolog()
+          experiment_id = cf.set_experiment(
+              experiment_name="Custom Model Informer Time-Series",
+          )
+          with cf.start_run('custom_model_run_informer') as run:
+              for ii in range(args.itr):
+                  setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(
+                      args.model, args.data, args.features, args.seq_len, args.label_len,
+                      args.pred_len, args.d_model, args.n_heads, args.e_layers,
+                      args.d_layers, args.d_ff, args.attn, args.factor, args.embed,
+                      args.distil, args.mix, args.des, ii
+                  )
+
+                  cf.log_param("seq_len", args.seq_len)
+                  cf.log_param("n_heads", args.n_heads)
+                  cf.log_param("enc_lay", args.e_layers)
+                  cf.log_param("pred_len", args.pred_len)
+                  cf.log_param("dec_lay", args.d_layers)
+
+                  exp = Exp(args)
+                  print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                  model = exp.train(setting)
+                  print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+
+                  print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                  test_results = exp.test(setting)
+
+                  cf.log_metric("mae", test_results['mae'])
+                  cf.log_metric("mse", test_results['mse'])
+                  cf.log_metric("rmse", test_results['rmse'])
+                  cf.log_metric("r2", test_results['r2'])
+
+                  print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                  preds = exp.predict(setting, True)
+
+                  args_file_path = './args.txt'
+                  with open(args_file_path, 'w') as f:
+                      for arg, value in vars(args).items():
+                          f.write(f"{arg}={value}\n")
+                  artifacts = {"args.txt": args_file_path}
+
+                  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                  model.to(device)
+
+                  example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()
+                  example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()
+                  example_x_dec = torch.rand(1, args.pred_len, args.dec_in).to(device).float()
+                  example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()
+                  inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec, example_x_mark_dec)
+                  output_example = model(*inputs_example)
+
+                  inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor in inputs_example)
+                  output_example_cpu = output_example.cpu().detach().numpy()
+                  inputs_example_cpu_no_batch = tuple(input_array[0] for input_array in inputs_example_cpu)
+                  output_example_cpu_no_batch = output_example_cpu[0]
+
+                  inputs_combined = np.concatenate([input_array.flatten() for input_array in inputs_example_cpu_no_batch], axis=-1)
+                  input_df = pd.DataFrame(inputs_combined)
+
+                  try:
+                      signature = cf.models.infer_signature(input_df, output_example_cpu_no_batch)
+                      print('Inference Signature Correctly Saved!')
+                  except Exception as e:
+                      print(f"Error inferring signature: {e}")
+                      signature = None
+
+                  model_info = cf.pyfunc.log_model(
+                      artifact_path='informer-google-trace',
+                      python_model=exp,
+                      artifacts=artifacts,
+                      pip_requirements=[],
+                      input_example=input_df,
+                      signature=signature
+                  )
+
+                  print(f"Run_id", run.info.run_id)
+                  print(f"Artifact_uri", run.info.artifact_uri)
+                  print(f"Artifact_path", run.info.artifact_uri)
+                  registered_models_list = cf.search_registered_models()
+                  print(registered_models_list)
+          return f"{run.info.artifact_uri}/{model_info.artifact_path}"
+
+      def _serialize_str(str_value: str) -> str:
+          if not isinstance(str_value, str):
+              raise TypeError('Value "{}" has type "{}" instead of str.'.format(
+                  str(str_value), str(type(str_value))))
+          return str_value
+
+      import argparse
+      _parser = argparse.ArgumentParser(prog='Training', description='')
+      _parser.add_argument("--file", dest="file_path", type=str, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+      _parsed_args = vars(_parser.parse_args())
+      _output_files = _parsed_args.pop("_output_paths", [])
+
+      _outputs = training(**_parsed_args)
+
+      _outputs = [_outputs]
+
+      _output_serializers = [
+          _serialize_str,
+      ]
+
+      import os
+      for idx, output_file in enumerate(_output_files):
+          try:
+              os.makedirs(os.path.dirname(output_file))
+          except OSError:
+              pass
+          with open(output_file, 'w') as f:
+              f.write(_output_serializers[idx](_outputs[idx]))
     args:
     - --file
     - {inputPath: file}
