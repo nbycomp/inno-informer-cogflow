@@ -285,7 +285,7 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
         'lradj': 'type1',
         'use_amp': False,
         'inverse': False,
-        'use_gpu': True,
+        'use_gpu': False,
         'gpu': 0,
         'use_multi_gpu': False,
         'devices': '0,1,2,3'
