@@ -95,6 +95,7 @@ def training(file_path: cf.input_path('parquet'), args)->str:
     import torch
     import numpy as np
     import cogflow as cf
+    import json
 
     args = argparse.Namespace(**json.loads(args_json))
 
