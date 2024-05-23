@@ -1,6 +1,5 @@
 import argparse
 import os
-import json
 import sys
 import torch
 import pandas as pd
@@ -89,9 +88,7 @@ args.freq = args.freq[-1:]
 print('Args in experiment:')
 print(args, '\n')
 
-
-
-def training(file_path, args_json):
+def training(file_path: cf.input_path('parquet'), args)->str:
     import sys
     import os
     import pandas as pd
@@ -99,31 +96,8 @@ def training(file_path, args_json):
     import numpy as np
     import cogflow as cf
 
-    args = argparse.Namespace(**json.loads(args_json))
-
-    # Log the system path before appending directories
-    print("System path before appending directories:")
-    print(sys.path)
+    # Your existing logging and path setup code
     
-    # Add root and necessary directories to sys.path
-    sys.path.append('/')
-    sys.path.append('/exp')
-    sys.path.append('/models')
-    sys.path.append('/utils')
-
-    # Log the system path after appending directories
-    print("System path after appending directories:")
-    print(sys.path)
-
-    # Log the contents of each directory for debugging
-    directories_to_check = ['/exp', '/models', '/utils', '/data']
-    for directory in directories_to_check:
-        if os.path.isdir(directory):
-            print(f"Contents of {directory}:")
-            print(os.listdir(directory))
-        else:
-            print(f"{directory} is not a directory or does not exist.")
-
     # Attempt to import the required module
     try:
         from exp.exp_informer import Exp_Informer
@@ -217,29 +191,86 @@ def training(file_path, args_json):
 
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
 
+
 ##################################################### PIPELINE ###########################################################
 
-# Preprocessing Component
-def preprocess(file_path, output_file, args_json):
+def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('parquet'), args: cf.output_path('json')):
     import pandas as pd
+    import shutil
     import os
     import json
 
     # Read the CSV file and convert it to parquet format
     df = pd.read_csv(file_path, header=0, sep=";")
     
-    # Deserialize args from JSON
-    args_dict = json.loads(args_json)
-    
-    # Add args to the dataframe
-    df['args'] = json.dumps(args_dict)
+    # Serialize directory data into parquet file
+    directory_data = {
+        'exp': os.listdir('exp'),
+        'models': os.listdir('models'),
+        'utils': os.listdir('utils'),
+        'data': os.listdir('data')
+    }
+    df['directory_data'] = directory_data
     
     df.to_parquet(output_file)
+    
+    # Save args to a JSON file
+    args_dict = {
+        'experiment_name': 'default_exp',
+        'model': 'informer',
+        'data': 'ETTh1',
+        'root_path': './ETDataset/ETT-small/',
+        'data_path': 'ETTh1.csv',
+        'features': 'M',
+        'target': 'OT',
+        'freq': 'h',
+        'checkpoints': './checkpoints/',
+        'seq_len': 96,
+        'label_len': 48,
+        'pred_len': 24,
+        'enc_in': 7,
+        'dec_in': 7,
+        'c_out': 7,
+        'd_model': 512,
+        'n_heads': 8,
+        'e_layers': 2,
+        'd_layers': 1,
+        's_layers': '3,2,1',
+        'd_ff': 2048,
+        'factor': 5,
+        'padding': 0,
+        'distil': True,
+        'dropout': 0.05,
+        'attn': 'prob',
+        'embed': 'timeF',
+        'activation': 'gelu',
+        'output_attention': False,
+        'do_predict': False,
+        'mix': True,
+        'cols': None,
+        'num_workers': 0,
+        'itr': 2,
+        'train_epochs': 6,
+        'batch_size': 32,
+        'patience': 3,
+        'learning_rate': 0.0001,
+        'des': 'test',
+        'loss': 'mse',
+        'lradj': 'type1',
+        'use_amp': False,
+        'inverse': False,
+        'use_gpu': True,
+        'gpu': 0,
+        'use_multi_gpu': False,
+        'devices': '0,1,2,3'
+    }
+    with open(args, 'w') as f:
+        json.dump(args_dict, f)
 
 preprocess_op = cf.create_component_from_func(
     func=preprocess,
     output_component_file='preprocess-component.yaml',
-    base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
+    base_image='burntt/nby-cogflow-informer:latest',
     packages_to_install=[]
 )
 
@@ -262,6 +293,8 @@ def serving(model_uri, name):
         print(f"Encountered an unexpected exception: {e}")
         raise
 
+
+
 kserve_op=cf.create_component_from_func(
     func=serving,
     output_component_file='kserve-component.yaml',
@@ -273,25 +306,19 @@ def getmodel(name):
     import cogflow as cf
     cf.get_model_url(name)
     
+
 getmodel_op=cf.create_component_from_func(func=getmodel,
         output_component_file='kserve-component.yaml',
         base_image='burntt/bo-informer:v1',
         packages_to_install=[])
 
-
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
-    args_json = json.dumps(vars(args))  # Serialize args to JSON
-
-    preprocess_task = preprocess_op(
-        file_path=file,
-        output_file='/tmp/preprocessed_data.parquet',  # Provide an output file path
-        args_json=args_json  # Pass the serialized args here
-    )
+    preprocess_task = preprocess_op(file='/data/Gtrace2019/Gtrace_5m.csv')
     
     train_task = training_op(
-        file_path=preprocess_task.outputs['output'],
-        args_json=args_json  # Pass the serialized args here
+        file=preprocess_task.outputs['output'],
+        args=preprocess_task.outputs['args']  # Pass the args output
     )
     
     kserve_task = kserve_op(model_uri=train_task.outputs['Output'], name=isvc)
