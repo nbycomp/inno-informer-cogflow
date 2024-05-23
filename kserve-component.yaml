@@ -1,0 +1,26 @@
+name: Getmodel
+inputs:
+- {name: name}
+implementation:
+  container:
+    image: hiroregistry/cogflow:1.1
+    command:
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      printf "%s" "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - |
+      def getmodel(name):
+          cf.get_model_url(name)
+
+      import argparse
+      _parser = argparse.ArgumentParser(prog='Getmodel', description='')
+      _parser.add_argument("--name", dest="name", type=str, required=True, default=argparse.SUPPRESS)
+      _parsed_args = vars(_parser.parse_args())
+
+      _outputs = getmodel(**_parsed_args)
+    args:
+    - --name
+    - {inputValue: name}
