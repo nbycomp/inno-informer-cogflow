@@ -88,7 +88,7 @@ args.freq = args.freq[-1:]
 print('Args in experiment:')
 print(args, '\n')
 
-def training(file_path: cf.input_path('parquet'), args)->str:
+def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->str:
     import sys
     import os
     import pandas as pd
@@ -97,7 +97,9 @@ def training(file_path: cf.input_path('parquet'), args)->str:
     import cogflow as cf
     import json
 
-    args = argparse.Namespace(**json.loads(args_json))
+    # Load the args from the JSON file
+    with open(args, 'r') as f:
+        args = argparse.Namespace(**json.load(f))
 
     # Log the system path before appending directories
     print("System path before appending directories:")

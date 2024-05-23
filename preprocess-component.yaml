@@ -1,9 +1,9 @@
 name: Preprocess
 inputs:
-- {name: file_path, type: CSV}
-- {name: args_json, type: String}
+- {name: file, type: CSV}
 outputs:
-- {name: output_file, type: parquet}  # Make sure the output name matches
+- {name: output, type: parquet}
+- {name: args, type: json}
 implementation:
   container:
     image: burntt/nby-cogflow-informer:latest
@@ -15,41 +15,96 @@ implementation:
       printf "%s" "$0" > "$program_path"
       python3 -u "$program_path" "$@"
     - |
-      import json
-
       def _make_parent_dirs_and_return_path(file_path: str):
           import os
           os.makedirs(os.path.dirname(file_path), exist_ok=True)
           return file_path
 
-      def preprocess(file_path, output_file, args_json):
+      def preprocess(file_path, output_file, args):
           import pandas as pd
+          import shutil
           import os
           import json
 
           # Read the CSV file and convert it to parquet format
           df = pd.read_csv(file_path, header=0, sep=";")
 
-          # Deserialize args from JSON
-          args_dict = json.loads(args_json)
-          
-          # Add args to the dataframe
-          df['args'] = json.dumps(args_dict)
-          
+          # Serialize directory data into parquet file
+          directory_data = {
+              'exp': os.listdir('exp'),
+              'models': os.listdir('models'),
+              'utils': os.listdir('utils'),
+              'data': os.listdir('data')
+          }
+          df['directory_data'] = directory_data
+
           df.to_parquet(output_file)
+
+          # Save args to a JSON file
+          args_dict = {
+              'experiment_name': 'default_exp',
+              'model': 'informer',
+              'data': 'ETTh1',
+              'root_path': './ETDataset/ETT-small/',
+              'data_path': 'ETTh1.csv',
+              'features': 'M',
+              'target': 'OT',
+              'freq': 'h',
+              'checkpoints': './checkpoints/',
+              'seq_len': 96,
+              'label_len': 48,
+              'pred_len': 24,
+              'enc_in': 7,
+              'dec_in': 7,
+              'c_out': 7,
+              'd_model': 512,
+              'n_heads': 8,
+              'e_layers': 2,
+              'd_layers': 1,
+              's_layers': '3,2,1',
+              'd_ff': 2048,
+              'factor': 5,
+              'padding': 0,
+              'distil': True,
+              'dropout': 0.05,
+              'attn': 'prob',
+              'embed': 'timeF',
+              'activation': 'gelu',
+              'output_attention': False,
+              'do_predict': False,
+              'mix': True,
+              'cols': None,
+              'num_workers': 0,
+              'itr': 2,
+              'train_epochs': 6,
+              'batch_size': 32,
+              'patience': 3,
+              'learning_rate': 0.0001,
+              'des': 'test',
+              'loss': 'mse',
+              'lradj': 'type1',
+              'use_amp': False,
+              'inverse': False,
+              'use_gpu': True,
+              'gpu': 0,
+              'use_multi_gpu': False,
+              'devices': '0,1,2,3'
+          }
+          with open(args, 'w') as f:
+              json.dump(args_dict, f)
 
       import argparse
       _parser = argparse.ArgumentParser(prog='Preprocess', description='')
-      _parser.add_argument("--file_path", dest="file_path", type=str, required=True, default=argparse.SUPPRESS)
-      _parser.add_argument("--output_file", dest="output_file", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
-      _parser.add_argument("--args_json", dest="args_json", type=str, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--file", dest="file_path", type=str, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--output", dest="output_file", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--args", dest="args", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
       _parsed_args = vars(_parser.parse_args())
 
       _outputs = preprocess(**_parsed_args)
     args:
-    - --file_path
-    - {inputPath: file_path}
-    - --output_file
-    - {outputPath: output_file}
-    - --args_json
-    - {inputValue: args_json}
+    - --file
+    - {inputPath: file}
+    - --output
+    - {outputPath: output}
+    - --args
+    - {outputPath: args}
