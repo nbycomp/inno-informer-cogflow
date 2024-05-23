@@ -221,7 +221,7 @@ def preprocess(file_path: cf.input_path('CSV'),
 preprocess_op = cf.create_component_from_func(
     func=preprocess,
     output_component_file='preprocess-component.yaml',
-    base_image='burntt/bo-informer:v1',  # Example PyTorch image
+    base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
     packages_to_install=[]
 )
 
@@ -229,7 +229,7 @@ preprocess_op = cf.create_component_from_func(
 training_op = cf.create_component_from_func(
     func=training,
     output_component_file='train-component.yaml',
-    base_image='burntt/bo-informer:v1',  # Example PyTorch image
+    base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
     packages_to_install=[]
 )
 
@@ -239,7 +239,7 @@ def serving(model_uri, name):
 kserve_op=cf.create_component_from_func(
     func=serving,
     output_component_file='kserve-component.yaml',
-    base_image='burntt/bo-informer:v1',  # Example PyTorch image
+    base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
     packages_to_install=[]
 )
 
@@ -252,7 +252,7 @@ getmodel_op=cf.create_component_from_func(func=getmodel,
         packages_to_install=[])
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
-def informer_pipeline(url, isvc):
+def informer_pipeline(file, isvc):
     preprocess_task = preprocess_op(file='./data/Gtrace2019/Gtrace_5m.csv')
     
     train_task = training_op(file=preprocess_task.outputs['output'])
@@ -269,7 +269,7 @@ client = cf.client()
 client.create_run_from_pipeline_func(
     informer_pipeline,
     arguments={
-        "url": "./data/Gtrace2019/Gtrace_5m.csv",
+        "file": "./data/Gtrace2019/Gtrace_5m.csv",
         "isvc": "sample-final-bola33"
     }
 )

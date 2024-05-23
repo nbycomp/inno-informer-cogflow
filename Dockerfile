@@ -21,9 +21,8 @@ COPY ./exp ./exp
 COPY ./models ./models
 COPY ./utils ./utils
 COPY ./data ./data
-COPY ./scripts ./scripts
-COPY ./main_informer_mlflow_botorch.py ./main_informer_mlflow_botorch.py
+COPY ./run_cogflow_integration_informer_V2.py ./run_cogflow_integration_informer_V2.py
 
 # Set the entry point to run the application
-ENTRYPOINT ["python", "/app/main_informer_mlflow_botorch.py"]
+ENTRYPOINT ["python", "/app/run_cogflow_integration_informer_V2.py"]
 CMD []
