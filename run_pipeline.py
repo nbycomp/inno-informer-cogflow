@@ -307,6 +307,6 @@ client.create_run_from_pipeline_func(
     informer_pipeline,
     arguments={
         "file": "/data/Gtrace2019/Gtrace_5m.csv",
-        "isvc": "sample-final-bola33"
+        "isvc": "informer-serving-inference"
     }
 )
