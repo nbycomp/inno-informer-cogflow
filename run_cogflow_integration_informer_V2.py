@@ -197,8 +197,7 @@ def training(file_path: cf.input_path('parquet')) -> str:
 
 ##################################################### PIPELINE ###########################################################
 
-def preprocess(file_path: cf.input_path('CSV'),
-              output_file: cf.output_path('parquet')):
+def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('parquet')):
     import pandas as pd
     import shutil
     import os
@@ -212,10 +211,14 @@ def preprocess(file_path: cf.input_path('CSV'),
     
     # Copy each directory to the output location
     for directory in directories_to_copy:
+        target_directory = os.path.join(os.path.dirname(output_file), directory)
+        if os.path.exists(target_directory):
+            shutil.rmtree(target_directory)  # Remove existing directory
         if os.path.exists(directory):
-            shutil.copytree(directory, os.path.join(os.path.dirname(output_file), directory))
+            shutil.copytree(directory, target_directory)
         else:
             print(f"Directory {directory} does not exist and will not be copied.")
+
 
 
 preprocess_op = cf.create_component_from_func(
