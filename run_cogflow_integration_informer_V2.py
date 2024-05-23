@@ -97,17 +97,6 @@ def training(file_path: cf.input_path('parquet')) -> str:
     import numpy as np
     import shutil
 
-    # Log the system path for debugging
-    print("System path before appending directories:")
-    print(sys.path)
-    
-    # Add directories to the system path
-    base_dir = os.path.dirname(file_path)
-    sys.path.append(os.path.join(base_dir, 'exp'))
-    sys.path.append(os.path.join(base_dir, 'models'))
-    sys.path.append(os.path.join(base_dir, 'utils'))
-    sys.path.append(os.path.join(base_dir, 'data'))
-
     # Log the system path after appending directories
     print("System path after appending directories:")
     print(sys.path)
@@ -212,11 +201,20 @@ def training(file_path: cf.input_path('parquet')) -> str:
             print(f"Artifact_path", run.info.artifact_uri)
             registered_models_list = cf.search_registered_models()
             print(registered_models_list)
+
+    # Recreate directories and contents
+    for directory, contents in directory_data.items():
+        os.makedirs(directory, exist_ok=True)
+        for item in contents:
+            # Copy files from parquet data to directories
+            shutil.copy(os.path.join('parquet_data', item), os.path.join(directory, item))
+
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
 
 
 ##################################################### PIPELINE ###########################################################
 
+# Preprocessing Component
 def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('parquet')):
     import pandas as pd
     import shutil
@@ -224,34 +222,17 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
 
     # Read the CSV file and convert it to parquet format
     df = pd.read_csv(file_path, header=0, sep=";")
+    
+    # Serialize directory data into parquet file
+    directory_data = {
+        'exp': os.listdir('exp'),
+        'models': os.listdir('models'),
+        'utils': os.listdir('utils'),
+        'data': os.listdir('data')
+    }
+    df['directory_data'] = directory_data
+    
     df.to_parquet(output_file)
-
-    # Define the directories to copy
-    directories_to_copy = ['exp', 'models', 'utils', 'data']
-    
-    # Copy each directory to the output location
-    for directory in directories_to_copy:
-        target_directory = os.path.join(os.path.dirname(output_file), directory)
-        if os.path.exists(target_directory):
-            if os.path.isdir(target_directory):
-                shutil.rmtree(target_directory)  # Remove existing directory
-            else:
-                os.remove(target_directory)  # Remove existing file
-        if os.path.exists(directory):
-            shutil.copytree(directory, target_directory)
-        else:
-            print(f"Directory {directory} does not exist and will not be copied.")
-    
-    # Log the contents of the target directory for debugging
-    print("Contents of the target directory after copying:")
-    print(os.listdir(os.path.dirname(output_file)))
-
-    # Log the contents of each copied directory for debugging
-    for directory in directories_to_copy:
-        target_directory = os.path.join(os.path.dirname(output_file), directory)
-        if os.path.exists(target_directory):
-            print(f"Contents of {target_directory}:")
-            print(os.listdir(target_directory))
 
 preprocess_op = cf.create_component_from_func(
     func=preprocess,
@@ -319,3 +300,4 @@ client.create_run_from_pipeline_func(
         "isvc": "sample-final-bola33"
     }
 )
+

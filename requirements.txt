@@ -8,7 +8,7 @@ tqdm==4.66.2
 botorch==0.8.5
 cogflow==1.9.8
 gym==0.26.2
-kserve==0.8.0
+kserve==0.12.0
 
 
 # https://app.asana.com/0/1204116974603769/1207247344395045
