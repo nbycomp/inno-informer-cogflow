@@ -159,6 +159,8 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
             registered_models_list = cf.search_registered_models()
             print(registered_models_list)
 
+
+            print('Returned String: ', f"{run.info.artifact_uri}/{model_info.artifact_path}")
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
 
 
