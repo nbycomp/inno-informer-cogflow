@@ -188,8 +188,8 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
             cf.log_metric("rmse", test_results['rmse'])
             cf.log_metric("r2", test_results['r2'])
 
-            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            preds = exp.predict(setting, True)
+            # print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            # preds = exp.predict(setting, True)
 
             args_file_path = './args.txt'
             with open(args_file_path, 'w') as f:
