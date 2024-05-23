@@ -89,29 +89,36 @@ print('Args in experiment:')
 print(args, '\n')
 
 
-def training(file_path: cf.input_path('parquet'), directory_data: dict) -> str:
+def training(file_path: cf.input_path('parquet')) -> str:
     import sys
     import os
     import pandas as pd
     import torch
     import numpy as np
-    import shutil
+    import cogflow as cf
 
-    base_dir = os.path.dirname(file_path)
+    # Log the system path before appending directories
+    print("System path before appending directories:")
+    print(sys.path)
+    
+    # Add root and necessary directories to sys.path
+    sys.path.append('/')
+    sys.path.append('/exp')
+    sys.path.append('/models')
+    sys.path.append('/utils')
 
     # Log the system path after appending directories
     print("System path after appending directories:")
     print(sys.path)
 
     # Log the contents of each directory for debugging
-    directories_to_check = ['exp', 'models', 'utils', 'data']
+    directories_to_check = ['/exp', '/models', '/utils', '/data']
     for directory in directories_to_check:
-        full_path = os.path.join(base_dir, directory)
-        if os.path.exists(full_path):
-            print(f"Contents of {full_path}:")
-            print(os.listdir(full_path))
+        if os.path.isdir(directory):
+            print(f"Contents of {directory}:")
+            print(os.listdir(directory))
         else:
-            print(f"Directory {full_path} does not exist.")
+            print(f"{directory} is not a directory or does not exist.")
 
     # Attempt to import the required module
     try:
@@ -204,16 +211,7 @@ def training(file_path: cf.input_path('parquet'), directory_data: dict) -> str:
             registered_models_list = cf.search_registered_models()
             print(registered_models_list)
 
-    # Recreate directories and contents
-    for directory, contents in directory_data.items():
-        os.makedirs(directory, exist_ok=True)
-        for item in contents:
-            # Copy files from parquet data to directories
-            shutil.copy(os.path.join('parquet_data', item), os.path.join(directory, item))
-
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
-
-
 
 ##################################################### PIPELINE ###########################################################
 
@@ -283,14 +281,13 @@ getmodel_op=cf.create_component_from_func(func=getmodel,
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
-    preprocess_task = preprocess_op(file='./data/Gtrace2019/Gtrace_5m.csv')
+    preprocess_task = preprocess_op(file='/data/Gtrace2019/Gtrace_5m.csv')
     
     train_task = training_op(
-    file=preprocess_task.outputs['output'],
-    directory_data={'exp': [], 'models': [], 'utils': [], 'data': []}  # Provide appropriate data here
-)
+        file=preprocess_task.outputs['output']
+    )
     
-    kserve_task = kserve_op(model_uri=train_task.output, name=isvc)
+    kserve_task = kserve_op(model_uri=train_task.outputs['Output'], name=isvc)
     kserve_task.after(train_task)
     
     getmodel_task = getmodel_op(isvc)
@@ -300,7 +297,7 @@ client = cf.client()
 client.create_run_from_pipeline_func(
     informer_pipeline,
     arguments={
-        "file": "./data/Gtrace2019/Gtrace_5m.csv",
+        "file": "/data/Gtrace2019/Gtrace_5m.csv",
         "isvc": "sample-final-bola33"
     }
 )
