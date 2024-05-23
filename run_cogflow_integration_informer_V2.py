@@ -89,13 +89,15 @@ print('Args in experiment:')
 print(args, '\n')
 
 
-def training(file_path: cf.input_path('parquet')) -> str:
+def training(file_path: cf.input_path('parquet'), directory_data: dict) -> str:
     import sys
     import os
     import pandas as pd
     import torch
     import numpy as np
     import shutil
+
+    base_dir = os.path.dirname(file_path)
 
     # Log the system path after appending directories
     print("System path after appending directories:")
@@ -212,6 +214,7 @@ def training(file_path: cf.input_path('parquet')) -> str:
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
 
 
+
 ##################################################### PIPELINE ###########################################################
 
 # Preprocessing Component
@@ -282,11 +285,12 @@ getmodel_op=cf.create_component_from_func(func=getmodel,
 def informer_pipeline(file, isvc):
     preprocess_task = preprocess_op(file='./data/Gtrace2019/Gtrace_5m.csv')
     
-    train_task = training_op(file=preprocess_task.outputs['output'])
-    train_task = train_task.AddModelAccess()
+    train_task = training_op(
+    file=preprocess_task.outputs['output'],
+    directory_data={'exp': [], 'models': [], 'utils': [], 'data': []}  # Provide appropriate data here
+)
     
     kserve_task = kserve_op(model_uri=train_task.output, name=isvc)
-    kserve_task = kserve_task.AddModelAccess()
     kserve_task.after(train_task)
     
     getmodel_task = getmodel_op(isvc)
@@ -300,4 +304,3 @@ client.create_run_from_pipeline_func(
         "isvc": "sample-final-bola33"
     }
 )
-
