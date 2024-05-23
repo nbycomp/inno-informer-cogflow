@@ -95,6 +95,19 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
     df.to_parquet(output_file)
 
 def training(file_path: cf.input_path('parquet')) -> str:
+    import sys
+    import os
+    import pandas as pd
+    import torch
+    import numpy as np
+    import shutil
+    
+    # Add directories to the system path
+    sys.path.append('./exp')
+    sys.path.append('./models')
+    sys.path.append('./utils')
+    sys.path.append('./data')
+
     from exp.exp_informer import Exp_Informer
 
     Exp = Exp_Informer
@@ -182,52 +195,65 @@ def training(file_path: cf.input_path('parquet')) -> str:
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
 
 
-##############################################################################################
-
-web_downloader_op = cf.load_component_from_url('https://raw.githubusercontent.com/kubeflow/pipelines/master/components/contrib/web/Download/component.yaml')
+##################################################### PIPELINE ###########################################################
 
 def preprocess(file_path: cf.input_path('CSV'),
               output_file: cf.output_path('parquet')):
     import pandas as pd
+    import shutil
+    import os
+
+    # Read the CSV file and convert it to parquet format
     df = pd.read_csv(file_path, header=0, sep=";")
-    df.columns = [c.lower().replace(' ', '_') for c in df.columns]
     df.to_parquet(output_file)
+
+    # Define the directories to copy
+    directories_to_copy = ['exp', 'models', 'utils', 'data']
+    
+    # Copy each directory to the output location
+    for directory in directories_to_copy:
+        if os.path.exists(directory):
+            shutil.copytree(directory, os.path.join(os.path.dirname(output_file), directory))
+        else:
+            print(f"Directory {directory} does not exist and will not be copied.")
+
 
 preprocess_op = cf.create_component_from_func(
     func=preprocess,
     output_component_file='preprocess-component.yaml',
-    base_image='hiroregistry/cogflow:1.1',
+    base_image='burntt/bo-informer:v1',  # Example PyTorch image
     packages_to_install=[]
 )
+
 
 training_op = cf.create_component_from_func(
     func=training,
     output_component_file='train-component.yaml',
-    base_image='hiroregistry/cogflow:1.1',
+    base_image='burntt/bo-informer:v1',  # Example PyTorch image
     packages_to_install=[]
 )
 
 def serving(model_uri, name):
     cf.serve_model_v1(model_uri, name)
 
-kserve_op=cf.create_component_from_func(func=serving,
+kserve_op=cf.create_component_from_func(
+    func=serving,
     output_component_file='kserve-component.yaml',
-    base_image='hiroregistry/cogflow:1.1',
-    packages_to_install=[])
+    base_image='burntt/bo-informer:v1',  # Example PyTorch image
+    packages_to_install=[]
+)
 
 def getmodel(name):
     cf.get_model_url(name)
 
-
 getmodel_op=cf.create_component_from_func(func=getmodel,
         output_component_file='kserve-component.yaml',
-        base_image='hiroregistry/cogflow:1.1',
+        base_image='burntt/bo-informer:v1',
         packages_to_install=[])
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(url, isvc):
-    web_downloader_task = web_downloader_op(url=url)
-    preprocess_task = preprocess_op(file=web_downloader_task.outputs['data'])
+    preprocess_task = preprocess_op(file='./data/Gtrace2019/Gtrace_5m.csv')
     
     train_task = training_op(file=preprocess_task.outputs['output'])
     train_task = train_task.AddModelAccess()

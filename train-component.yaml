@@ -5,7 +5,7 @@ outputs:
 - {name: Output, type: String}
 implementation:
   container:
-    image: hiroregistry/cogflow:1.1
+    image: burntt/bo-informer:v1
     command:
     - sh
     - -ec
@@ -13,69 +13,57 @@ implementation:
       program_path=$(mktemp)
       printf "%s" "$0" > "$program_path"
       python3 -u "$program_path" "$@"
-    - "def training(file_path):\n\n    Exp = Exp_Informer\n\n    cf.autolog()\n  \
-      \  cf.pytorch.autolog()\n    experiment_id = cf.set_experiment(\n        experiment_name=\"\
-      Custom Model Informer Time-Series\",\n\n    )\n    with cf.start_run('custom_model_run_informer')\
-      \ as run:\n        for ii in range(args.itr):\n            # setting record\
-      \ of experiments\n            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(args.model,\
-      \ args.data, args.features, \n                        args.seq_len, args.label_len,\
-      \ args.pred_len,\n                        args.d_model, args.n_heads, args.e_layers,\
-      \ args.d_layers, args.d_ff, args.attn, args.factor, \n                     \
-      \   args.embed, args.distil, args.mix, args.des, ii)\n\n            ###################################\
-      \ Log Archictecture with CogFlow ###################################\n     \
-      \       cf.log_param(\"seq_len\", args.seq_len)\n            cf.log_param(\"\
-      n_heads\", args.n_heads)\n            cf.log_param(\"enc_lay\", args.e_layers)\n\
-      \            cf.log_param(\"pred_len\", args.pred_len)\n            cf.log_param(\"\
-      dec_lay\", args.d_layers)\n\n            exp = Exp(args) # set experiments\n\
-      \            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))\n\
+    - "def training(file_path):\n    import sys\n    import os\n    import pandas\
+      \ as pd\n    import torch\n    import numpy as np\n    import shutil\n\n   \
+      \ # Add directories to the system path\n    sys.path.append('./exp')\n    sys.path.append('./models')\n\
+      \    sys.path.append('./utils')\n    sys.path.append('./data')\n\n    from exp.exp_informer\
+      \ import Exp_Informer\n\n    Exp = Exp_Informer\n\n    cf.autolog()\n    cf.pytorch.autolog()\n\
+      \    experiment_id = cf.set_experiment(\n        experiment_name=\"Custom Model\
+      \ Informer Time-Series\",\n    )\n    with cf.start_run('custom_model_run_informer')\
+      \ as run:\n        for ii in range(args.itr):\n            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(\n\
+      \                args.model, args.data, args.features, args.seq_len, args.label_len,\
+      \ args.pred_len, args.d_model, \n                args.n_heads, args.e_layers,\
+      \ args.d_layers, args.d_ff, args.attn, args.factor, args.embed, \n         \
+      \       args.distil, args.mix, args.des, ii\n            )\n\n            cf.log_param(\"\
+      seq_len\", args.seq_len)\n            cf.log_param(\"n_heads\", args.n_heads)\n\
+      \            cf.log_param(\"enc_lay\", args.e_layers)\n            cf.log_param(\"\
+      pred_len\", args.pred_len)\n            cf.log_param(\"dec_lay\", args.d_layers)\n\
+      \n            exp = Exp(args)\n            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))\n\
       \            model = exp.train(setting)\n            print('>>>>>>>end training\
       \ : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))\n\n            print('>>>>>>>testing\
       \ : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))\n            test_results\
-      \ = exp.test(setting)\n\n            ################################### Log\
-      \ Metrics with CogFlow ###################################\n            cf.log_metric(\"\
-      mae\", test_results['mae'])\n            cf.log_metric(\"mse\", test_results['mse'])\n\
-      \            cf.log_metric(\"rmse\", test_results['rmse'])\n            cf.log_metric(\"\
-      r2\", test_results['r2'])\n\n            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))\n\
-      \            preds = exp.predict(setting, True)\n\n            ###################################\
-      \ Log the Model with CogFlow ###################################\n\n       \
-      \     # Create a random artifact: save args to a text file\n            args_file_path\
+      \ = exp.test(setting)\n\n            cf.log_metric(\"mae\", test_results['mae'])\n\
+      \            cf.log_metric(\"mse\", test_results['mse'])\n            cf.log_metric(\"\
+      rmse\", test_results['rmse'])\n            cf.log_metric(\"r2\", test_results['r2'])\n\
+      \n            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))\n\
+      \            preds = exp.predict(setting, True)\n\n            args_file_path\
       \ = './args.txt'\n            with open(args_file_path, 'w') as f:\n       \
       \         for arg, value in vars(args).items():\n                    f.write(f\"\
-      {arg}={value}\\n\")\n            artifacts = {\n                \"args.txt\"\
-      : args_file_path\n            }\n\n            # Ensure model is on the correct\
-      \ device\n            device = torch.device(\"cuda\" if torch.cuda.is_available()\
-      \ else \"cpu\")\n            model.to(device)\n\n            # Prepare input\
-      \ examples and move them to the correct device\n            example_x_enc =\
-      \ torch.rand(1, args.seq_len, args.enc_in).to(device).float()\n            example_x_mark_enc\
+      {arg}={value}\\n\")\n            artifacts = {\"args.txt\": args_file_path}\n\
+      \n            device = torch.device(\"cuda\" if torch.cuda.is_available() else\
+      \ \"cpu\")\n            model.to(device)\n\n            example_x_enc = torch.rand(1,\
+      \ args.seq_len, args.enc_in).to(device).float()\n            example_x_mark_enc\
       \ = torch.rand(1, args.seq_len, 1).to(device).float()\n            example_x_dec\
       \ = torch.rand(1, args.pred_len, args.dec_in).to(device).float()\n         \
       \   example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()\n\
       \            inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec,\
-      \ example_x_mark_dec)\n\n            # Perform a forward pass with the model\n\
-      \            output_example = model(*inputs_example)\n\n            # Move inputs\
-      \ and output back to CPU, detach, and convert to numpy arrays\n            inputs_example_cpu\
-      \ = tuple(tensor.cpu().detach().numpy() for tensor in inputs_example)\n    \
-      \        output_example_cpu = output_example.cpu().detach().numpy()\n\n    \
-      \        # Remove the batch dimension by selecting the first element along that\
-      \ dimension\n            inputs_example_cpu_no_batch = tuple(input_array[0]\
-      \ for input_array in inputs_example_cpu)\n            output_example_cpu_no_batch\
-      \ = output_example_cpu[0]\n\n            # Flatten each input array and concatenate\
-      \ them along the columns\n            inputs_combined = np.concatenate([input_array.flatten()\
-      \ for input_array in inputs_example_cpu_no_batch], axis=-1)\n\n            #\
-      \ Convert the concatenated input to a pandas DataFrame\n            input_df\
-      \ = pd.DataFrame(inputs_combined)\n\n            # Get inference signature\n\
-      \            try:\n                signature = cf.models.infer_signature(input_df,\
+      \ example_x_mark_dec)\n            output_example = model(*inputs_example)\n\
+      \n            inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor\
+      \ in inputs_example)\n            output_example_cpu = output_example.cpu().detach().numpy()\n\
+      \            inputs_example_cpu_no_batch = tuple(input_array[0] for input_array\
+      \ in inputs_example_cpu)\n            output_example_cpu_no_batch = output_example_cpu[0]\n\
+      \n            inputs_combined = np.concatenate([input_array.flatten() for input_array\
+      \ in inputs_example_cpu_no_batch], axis=-1)\n            input_df = pd.DataFrame(inputs_combined)\n\
+      \n            try:\n                signature = cf.models.infer_signature(input_df,\
       \ output_example_cpu_no_batch)\n                print('Inference Signature Correctly\
       \ Saved!')\n            except Exception as e:\n                print(f\"Error\
       \ inferring signature: {e}\")\n                signature = None\n\n        \
-      \    # Log model with cogflow\n            model_info = cf.pyfunc.log_model(\n\
-      \                        artifact_path='informer-google-trace',\n          \
-      \              python_model=exp,\n                        artifacts=artifacts,\n\
-      \                        pip_requirements=[],\n                        input_example=input_df,\n\
-      \                        signature=signature\n                        )\n\n\
-      \            print(f\"Run_id\", run.info.run_id)\n            print(f\"Artifact_uri\"\
-      , run.info.artifact_uri)\n            print(f\"Artifact_path\", run.info.artifact_uri)\n\
-      \n            # Check and print model registry information\n            registered_models_list\
+      \    model_info = cf.pyfunc.log_model(\n                artifact_path='informer-google-trace',\n\
+      \                python_model=exp,\n                artifacts=artifacts,\n \
+      \               pip_requirements=[],\n                input_example=input_df,\n\
+      \                signature=signature\n            )\n\n            print(f\"\
+      Run_id\", run.info.run_id)\n            print(f\"Artifact_uri\", run.info.artifact_uri)\n\
+      \            print(f\"Artifact_path\", run.info.artifact_uri)\n            registered_models_list\
       \ = cf.search_registered_models()\n            print(registered_models_list)\n\
       \    return f\"{run.info.artifact_uri}/{model_info.artifact_path}\"\n\ndef _serialize_str(str_value:\
       \ str) -> str:\n    if not isinstance(str_value, str):\n        raise TypeError('Value\

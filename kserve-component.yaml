@@ -3,7 +3,7 @@ inputs:
 - {name: name}
 implementation:
   container:
-    image: hiroregistry/cogflow:1.1
+    image: burntt/bo-informer:v1
     command:
     - sh
     - -ec
