@@ -96,8 +96,31 @@ def training(file_path: cf.input_path('parquet'), args)->str:
     import numpy as np
     import cogflow as cf
 
-    # Your existing logging and path setup code
+    args = argparse.Namespace(**json.loads(args_json))
+
+    # Log the system path before appending directories
+    print("System path before appending directories:")
+    print(sys.path)
     
+    # Add root and necessary directories to sys.path
+    sys.path.append('/')
+    sys.path.append('/exp')
+    sys.path.append('/models')
+    sys.path.append('/utils')
+
+    # Log the system path after appending directories
+    print("System path after appending directories:")
+    print(sys.path)
+
+    # Log the contents of each directory for debugging
+    directories_to_check = ['/exp', '/models', '/utils', '/data']
+    for directory in directories_to_check:
+        if os.path.isdir(directory):
+            print(f"Contents of {directory}:")
+            print(os.listdir(directory))
+        else:
+            print(f"{directory} is not a directory or does not exist.")
+
     # Attempt to import the required module
     try:
         from exp.exp_informer import Exp_Informer
