@@ -146,11 +146,6 @@ def training(file_path: cf.input_path('parquet'))->str:
             model = exp.train(setting)
             print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
 
-            # Calculate and print sizes
-            package_size = get_package_sizes()
-            model_size = get_model_size(model)
-            total_size = package_size + model_size
-
             print('\n>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             test_results = exp.test(setting)
             
@@ -166,6 +161,12 @@ def training(file_path: cf.input_path('parquet'))->str:
 
 
             print('\n>>>>>>>estimating required environment size : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+
+            # Calculate and print sizes
+            package_size = get_package_sizes()
+            model_size = get_model_size(model)
+            total_size = package_size + model_size
+
             print(f"\n{'='*50}")
             print(f"ENVIRONMENT SIZE REQUIREMENTS:")
             print(f"Installed packages size: {package_size/1024:.2f} GB")
