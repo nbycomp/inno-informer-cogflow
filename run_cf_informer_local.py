@@ -113,7 +113,7 @@ def training(file_path: cf.input_path('parquet'))->str:
         experiment_name="Custom Model Informer Time-Series",
 
     )
-    with cf.start_run('custom_model_run_informer') as run:
+    with cf.start_run() as run:
         for ii in range(args.itr):
             # setting record of experiments
             setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(args.model, args.data, args.features, 

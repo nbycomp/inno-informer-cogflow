@@ -66,7 +66,7 @@ class Exp_Informer(Exp_Basic):
         args = self.args
 
         data_dict = {
-            'Gtrace_5m': Dataset_Custom
+            'alibaba_pod': Dataset_Custom
         }
         Data = data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
