@@ -86,7 +86,7 @@ args.detail_freq = args.freq
 args.freq = args.freq[-1:]
 
 # Check, print, and save a
-print('Args in experiment:')
+print('\n\nArgs in experiment:')
 print(args, '\n')
 
 ################################### CogFlow Experiment ###################################
