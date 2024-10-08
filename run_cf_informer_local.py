@@ -6,8 +6,10 @@ from exp.exp_informer import Exp_Informer
 import pandas as pd
 import numpy as np
 import cogflow as cf
-
 import sys
+import pkg_resources
+import subprocess
+
 print(sys.executable)
 
 ############### Arguments from Shell ##################
@@ -93,6 +95,26 @@ print(args, '\n')
 import logging
 logging.getLogger("mlflow.models.model").setLevel(logging.ERROR)
 
+def get_package_sizes():
+    total_size = 0
+    for package in pkg_resources.working_set:
+        try:
+            size = subprocess.check_output(['du', '-s', package.location]).split()[0].decode('utf-8')
+            total_size += int(size)
+        except:
+            pass
+    return total_size / 1024  # Convert KB to MB
+
+def get_model_size(model):
+    param_size = 0
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+    buffer_size = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+    size_all_mb = (param_size + buffer_size) / 1024**2
+    return size_all_mb
+
 def training(file_path: cf.input_path('parquet'))->str:
 
     Exp = Exp_Informer
@@ -120,13 +142,17 @@ def training(file_path: cf.input_path('parquet'))->str:
             cf.log_param("dec_lay", args.d_layers)
 
             exp = Exp(args) # set experiments
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+            print('\n>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
             model = exp.train(setting)
             print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            
-            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            test_results = exp.test(setting)
 
+            # Calculate and print sizes
+            package_size = get_package_sizes()
+            model_size = get_model_size(model)
+            total_size = package_size + model_size
+
+            print('\n>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            test_results = exp.test(setting)
             
             ################################### Log Metrics with CogFlow ###################################
             cf.log_metric("mae", test_results['mae'])
@@ -135,12 +161,22 @@ def training(file_path: cf.input_path('parquet'))->str:
             cf.log_metric("r2", test_results['r2'])
 
 
-            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            print('\n>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             preds = exp.predict(setting, True)
+
+
+            print('\n>>>>>>>estimating required environment size : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            print(f"\n{'='*50}")
+            print(f"ENVIRONMENT SIZE REQUIREMENTS:")
+            print(f"Installed packages size: {package_size:.2f} MB")
+            print(f"Model size: {model_size:.2f} MB")
+            print(f"Total size required: {total_size:.2f} MB")
+            print(f"{'='*50}\n")
         
             
             ################################### Log the Model with CogFlow ###################################
 
+            print('\n>>>>>>>elogging the model : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             # Create a random artifact: save args to a text file
             args_file_path = './args.txt'
             with open(args_file_path, 'w') as f:
@@ -209,4 +245,3 @@ def training(file_path: cf.input_path('parquet'))->str:
 
 
 training('randomstring')
-
