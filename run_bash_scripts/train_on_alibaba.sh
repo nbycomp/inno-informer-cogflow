@@ -15,11 +15,11 @@ python3 -u run_cf_informer_local.py \
   --dec_in 1 \
   --c_out 1 \
   --factor 5 \
-  --d_model 64 \
+  --d_model 32 \
   --n_heads 4 \
   --e_layers 1 \
   --d_layers 1 \
-  --d_ff 256 \
+  --d_ff 128 \
   --dropout 0.05 \
   --attn prob \
   --embed timeF \
@@ -31,7 +31,7 @@ python3 -u run_cf_informer_local.py \
   --learning_rate 0.00001 \
   --loss mse \
   --lradj type1 \
-  --num_workers 0 \
+  --num_workers 1 \
   --itr 1 \
   --train_epochs 1 \
   --patience 1 \

@@ -80,16 +80,6 @@ if args.use_gpu and args.use_multi_gpu:
     args.device_ids = [int(id_) for id_ in device_ids]
     args.gpu = args.device_ids[0]
 
-data_parser = {
-    'Gtrace_5m': {'data':'Gtrace_5m.csv','T':'avg_cpu_usage','M':[10,10,10],'S':[1,1,1],'MS':[10,10,10]},
-    'Gtrace_60m': {'data':'Gtrace_60m.csv','T':'avg_cpu_usage','M':[8,8,8],'S':[1,1,1],'MS':[7,7,1]},
-}
-
-if args.data in data_parser.keys():
-    data_info = data_parser[args.data]
-    args.data_path = data_info['data']
-    args.target = data_info['T']
-    args.enc_in, args.dec_in, args.c_out = data_info[args.features]
 
 args.s_layers = [int(s_l) for s_l in args.s_layers.replace(' ','').split(',')]
 args.detail_freq = args.freq
