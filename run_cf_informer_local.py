@@ -168,11 +168,10 @@ def training(file_path: cf.input_path('parquet'))->str:
             print('\n>>>>>>>estimating required environment size : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             print(f"\n{'='*50}")
             print(f"ENVIRONMENT SIZE REQUIREMENTS:")
-            print(f"Installed packages size: {package_size:.2f} MB")
-            print(f"Model size: {model_size:.2f} MB")
-            print(f"Total size required: {total_size:.2f} MB")
+            print(f"Installed packages size: {package_size/1024:.2f} GB")
+            print(f"Model size: {model_size/1024:.2f} GB")
+            print(f"Total size required: {total_size/1024:.2f} GB")
             print(f"{'='*50}\n")
-        
             
             ################################### Log the Model with CogFlow ###################################
 
