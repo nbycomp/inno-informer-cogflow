@@ -6,7 +6,6 @@ from exp.exp_informer import Exp_Informer
 import pandas as pd
 import numpy as np
 import cogflow as cf
-web_downloader_op=cf.load_component_from_url('https://raw.githubusercontent.com/kubeflow/pipelines/master/components/contrib/web/Download/component.yaml')
 
 import sys
 print(sys.executable)

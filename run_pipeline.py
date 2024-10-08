@@ -192,9 +192,9 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
     args_dict = {
         'experiment_name': 'dummy_exp_1',
         'model': 'informer',
-        'data': 'Gtrace_5m',
-        'root_path': './data/Gtrace2019/',
-        'data_path': 'Gtrace_5m.csv',
+        'data': 'Alibaba',
+        'root_path': './data/',
+        'data_path': 'processed_data.csv',
         'features': 'S',
         'target': 'avg_cpu_usage',
         'freq': 'm',
@@ -306,7 +306,7 @@ client = cf.client()
 client.create_run_from_pipeline_func(
     informer_pipeline,
     arguments={
-        "file": "/data/Gtrace2019/Gtrace_5m.csv",
+        "file": "/data/processed_data.csv",
         "isvc": "informer-serving-inference"
     }
 )

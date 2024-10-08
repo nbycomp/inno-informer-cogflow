@@ -1,8 +1,8 @@
 experiment_name=dummy_exp_1
 model=informer
 data=Gtrace_5m
-root_path=./data/Gtrace2019/
-data_path=Gtrace_5m.csv
+root_path=./data/
+data_path=processed_data.csv
 features=S
 target=avg_cpu_usage
 freq=m
