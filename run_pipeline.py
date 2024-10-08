@@ -187,30 +187,29 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
     df['directory_data'] = directory_data
     df.to_parquet(output_file)
     
-    # Save args to a JSON file with specified and default values
+    # Save args to a JSON file with updated values
     args_dict = {
-        'experiment_name': 'dummy_exp_1',
+        'experiment_name': 'small_exp_1',
         'model': 'informer',
-        'data': 'Alibaba',
+        'data': 'alibaba_pod',
         'root_path': './data/',
         'data_path': 'processed_data.csv',
         'features': 'S',
-        'target': 'avg_cpu_usage',
-        'freq': 'm',
+        'target': 'cpu_utilization',
+        'freq': '5min',
         'checkpoints': './checkpoints',
-        'seq_len': 24,
-        'label_len': 24,
-        'pred_len': 12,
-        'enc_in': 10,
-        'dec_in': 10,
-        'c_out': 10,
-        'd_model': 128,
-        'n_heads': 8,
-        'e_layers': 2,
+        'seq_len': 12,
+        'label_len': 12,
+        'pred_len': 6,
+        'enc_in': 1,
+        'dec_in': 1,
+        'c_out': 1,
+        'd_model': 32,
+        'n_heads': 4,
+        'e_layers': 1,
         'd_layers': 1,
-        's_layers': '3,2,1',  # Use the default if None
-        'd_ff': 512,
-        'factor': 10,
+        'd_ff': 128,
+        'factor': 5,
         'padding': 0,
         'distil': True,
         'dropout': 0.05,
@@ -221,21 +220,21 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
         'do_predict': False,
         'mix': True,
         'cols': None,
-        'num_workers': 0,
+        'num_workers': 1,
         'itr': 1,
         'train_epochs': 1,
-        'batch_size': 32,
+        'batch_size': 16,
         'patience': 1,
         'learning_rate': 0.00001,
-        'des': 'exp',
+        'des': 'small_exp',
         'loss': 'mse',
         'lradj': 'type1',
         'use_amp': False,
         'inverse': False,
-        'use_gpu': False,
+        'use_gpu': True,
         'gpu': 0,
         'use_multi_gpu': False,
-        'devices': '0,1,2,3'
+        'devices': '0'
     }
 
     with open(args, 'w') as f:
