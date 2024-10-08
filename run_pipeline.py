@@ -28,8 +28,7 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
         args.gpu = args.device_ids[0]
 
     data_parser = {
-        'Gtrace_5m': {'data': 'Gtrace_5m.csv', 'T': 'avg_cpu_usage', 'M': [10, 10, 10], 'S': [1, 1, 1], 'MS': [10, 10, 10]},
-        'Gtrace_60m': {'data': 'Gtrace_60m.csv', 'T': 'avg_cpu_usage', 'M': [8, 8, 8], 'S': [1, 1, 1], 'MS': [7, 7, 1]},
+        'alibaba_pod': {'data': 'Gtrace_5m.csv', 'T': 'avg_cpu_usage', 'M': [10, 10, 10], 'S': [1, 1, 1], 'MS': [10, 10, 10]},
     }
 
     if args.data in data_parser.keys():
