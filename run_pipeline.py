@@ -287,7 +287,7 @@ getmodel_op=cf.create_component_from_func(func=getmodel,
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
-    preprocess_task = preprocess_op(file='/data/Gtrace2019/Gtrace_5m.csv')
+    preprocess_task = preprocess_op(file='/data/preprocssed_data.csv')
     
     train_task = training_op(
         file=preprocess_task.outputs['output'],

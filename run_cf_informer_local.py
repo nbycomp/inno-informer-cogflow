@@ -95,15 +95,22 @@ print(args, '\n')
 import logging
 logging.getLogger("mlflow.models.model").setLevel(logging.ERROR)
 
+import os
+
 def get_package_sizes():
     total_size = 0
     for package in pkg_resources.working_set:
         try:
-            size = subprocess.check_output(['du', '-s', package.location]).split()[0].decode('utf-8')
-            total_size += int(size)
-        except:
-            pass
-    return total_size / 1024  # Convert KB to MB
+            package_path = os.path.dirname(package.location)
+            size = sum(
+                os.path.getsize(os.path.join(dirpath, filename))
+                for dirpath, dirnames, filenames in os.walk(package_path)
+                for filename in filenames
+            )
+            total_size += size
+        except Exception as e:
+            print(f"Error calculating size for {package.project_name}: {e}")
+    return total_size / (1024 * 1024)  # Convert bytes to MB
 
 def get_model_size(model):
     param_size = 0
@@ -112,7 +119,7 @@ def get_model_size(model):
     buffer_size = 0
     for buffer in model.buffers():
         buffer_size += buffer.nelement() * buffer.element_size()
-    size_all_mb = (param_size + buffer_size) / 1024**2
+    size_all_mb = (param_size + buffer_size) / (1024 * 1024)
     return size_all_mb
 
 def training(file_path: cf.input_path('parquet'))->str:
