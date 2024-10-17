@@ -1,11 +1,8 @@
-import argparse
-import pandas as pd
-import numpy as np
-import cogflow as cf
 
 def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->str:
     import sys
     import os
+    import argparse
     import pandas as pd
     import torch
     import numpy as np
