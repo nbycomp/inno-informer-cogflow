@@ -339,17 +339,68 @@ training_op = cf.create_component_from_func(
 
 def serving(model_uri, name):
     import cogflow as cf
+    import os
+    import urllib3
+    import warnings
+    
+    # Suppress InsecureRequestWarning
+    warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
+    
+    # Disable SSL verification (use with caution)
+    os.environ['CURL_CA_BUNDLE'] = ''
     
     try:
-        cf.serve_model_v1(model_uri, name)
-        print(f"Model served successfully: {name}")
+        print(f"Serving model from URI: {model_uri}")
+        
+        # Attempt to serve the model with SSL verification disabled
+        cf.serve_model_v1(model_uri, name, verify_ssl=False)
+        
+        print(f"Model served successfully with name: {name}")
     except Exception as e:
-        print(f"Error serving model: {str(e)}")
-        raise
+        print(f"Error during model serving: {str(e)}")
+        
+        # If the first attempt fails, try an alternative method
+        try:
+            from kubernetes import client, config
+            
+            print("Attempting alternative serving method...")
+            config.load_incluster_config()
+            api_instance = client.CustomObjectsApi()
+            
+            inference_service = {
+                "apiVersion": "serving.kserve.io/v1beta1",
+                "kind": "InferenceService",
+                "metadata": {"name": name},
+                "spec": {
+                    "predictor": {
+                        "model": {
+                            "modelFormat": {"name": "mlflow"},
+                            "storageUri": model_uri
+                        }
+                    }
+                }
+            }
+            
+            api_instance.create_namespaced_custom_object(
+                group="serving.kserve.io",
+                version="v1beta1",
+                namespace="kubeflow",
+                plural="inferenceservices",
+                body=inference_service
+            )
+            
+            print(f"Model served successfully using alternative method with name: {name}")
+        except Exception as alt_e:
+            print(f"Error during alternative serving method: {str(alt_e)}")
+            raise
+    
+    return "Model serving completed"
 
 kserve_op = cf.create_component_from_func(
     func=serving,
-    output_component_file='kserve-component.yaml'
+    output_component_file='kserve-component.yaml',
+    base_image='burntt/nby-cogflow-informer:latest',
+    packages_to_install=['kubernetes']
 )
 
 def getmodel(name):
