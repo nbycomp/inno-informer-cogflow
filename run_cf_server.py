@@ -279,7 +279,7 @@ def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('par
         'data_path': 'processed_data.csv',
         'features': 'S',
         'target': 'cpu_utilization',
-        'freq': 't',
+        'freq': 'm',
         'checkpoints': './checkpoints',
         'seq_len': 12,
         'label_len': 12,
