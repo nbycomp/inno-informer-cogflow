@@ -21,7 +21,7 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
         args.gpu = args.device_ids[0]
 
     data_parser = {
-        'alibaba_pod': {'data': 'processed_data.csv', 'T': 'avg_cpu_usage', 'M': [10, 10, 10], 'S': [1, 1, 1], 'MS': [10, 10, 10]},
+        'alibaba_pod': {'data': 'processed_data.csv', 'T': 'cpu_utilization', 'M': [10, 10, 10], 'S': [1, 1, 1], 'MS': [10, 10, 10]},
     }
 
     if args.data in data_parser.keys():
@@ -74,87 +74,178 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
     experiment_id = cf.set_experiment(
         experiment_name="Custom Model Informer Time-Series",
     )
-    with cf.start_run('custom_model_run_informer') as run:
-        for ii in range(args.itr):
-            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(
-                args.model, args.data, args.features, args.seq_len, args.label_len, args.pred_len, args.d_model, 
-                args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, args.embed, 
-                args.distil, args.mix, args.des, ii
-            )
 
-            cf.log_param("seq_len", args.seq_len)
-            cf.log_param("n_heads", args.n_heads)
-            cf.log_param("enc_lay", args.e_layers)
-            cf.log_param("pred_len", args.pred_len)
-            cf.log_param("dec_lay", args.d_layers)
+    # Replace the existing cf.start_run block with this:
+    try:
+        with cf.start_run(run_name='custom_model_run_informer', nested=True) as run:
+            for ii in range(args.itr):
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(
+                    args.model, args.data, args.features, args.seq_len, args.label_len, args.pred_len, args.d_model, 
+                    args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, args.embed, 
+                    args.distil, args.mix, args.des, ii
+                )
 
-            exp = Exp(args)
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            model = exp.train(setting)
-            print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            
-            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            test_results = exp.test(setting)
+                cf.log_param("seq_len", args.seq_len)
+                cf.log_param("n_heads", args.n_heads)
+                cf.log_param("enc_lay", args.e_layers)
+                cf.log_param("pred_len", args.pred_len)
+                cf.log_param("dec_lay", args.d_layers)
 
-            cf.log_metric("mae", test_results['mae'])
-            cf.log_metric("mse", test_results['mse'])
-            cf.log_metric("rmse", test_results['rmse'])
-            cf.log_metric("r2", test_results['r2'])
+                exp = Exp(args)
+                print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                model = exp.train(setting)
+                print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                
+                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                test_results = exp.test(setting)
 
-            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            preds = exp.predict(setting, True)
+                cf.log_metric("mae", test_results['mae'])
+                cf.log_metric("mse", test_results['mse'])
+                cf.log_metric("rmse", test_results['rmse'])
+                cf.log_metric("r2", test_results['r2'])
 
-            args_file_path = './args.txt'
-            with open(args_file_path, 'w') as f:
-                for arg, value in vars(args).items():
-                    f.write(f"{arg}={value}\n")
-            artifacts = {"args.txt": args_file_path}
+                print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                preds = exp.predict(setting, True)
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            model.to(device)
+                args_file_path = './args.txt'
+                with open(args_file_path, 'w') as f:
+                    for arg, value in vars(args).items():
+                        f.write(f"{arg}={value}\n")
+                artifacts = {"args.txt": args_file_path}
 
-
-            print('ARGS before signature: ', args)
-
-            example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()
-            example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()
-            example_x_dec = torch.rand(1, args.pred_len, args.dec_in).to(device).float()
-            example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()
-            inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec, example_x_mark_dec)
-            output_example = model(*inputs_example)
-
-            inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor in inputs_example)
-            output_example_cpu = output_example.cpu().detach().numpy()
-            inputs_example_cpu_no_batch = tuple(input_array[0] for input_array in inputs_example_cpu)
-            output_example_cpu_no_batch = output_example_cpu[0]
-
-            inputs_combined = np.concatenate([input_array.flatten() for input_array in inputs_example_cpu_no_batch], axis=-1)
-            input_df = pd.DataFrame(inputs_combined)
-
-            try:
-                signature = cf.models.infer_signature(input_df, output_example_cpu_no_batch)
-                print('Inference Signature Correctly Saved!')
-            except Exception as e:
-                print(f"Error inferring signature: {e}")
-                signature = None
-
-            model_info = cf.pyfunc.log_model(
-                artifact_path='informer-google-trace',
-                python_model=exp,
-                artifacts=artifacts,
-                pip_requirements=[],
-                input_example=input_df,
-                signature=signature
-            )
-
-            print(f"Run_id", run.info.run_id)
-            print(f"Artifact_uri", run.info.artifact_uri)
-            print(f"Artifact_path", run.info.artifact_uri)
-            registered_models_list = cf.search_registered_models()
-            print(registered_models_list)
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                model.to(device)
 
 
-            print('Returned String: ', f"{run.info.artifact_uri}/{model_info.artifact_path}")
+                print('ARGS before signature: ', args)
+
+                example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()
+                example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()
+                example_x_dec = torch.rand(1, args.pred_len, args.dec_in).to(device).float()
+                example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()
+                inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec, example_x_mark_dec)
+                output_example = model(*inputs_example)
+
+                inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor in inputs_example)
+                output_example_cpu = output_example.cpu().detach().numpy()
+                inputs_example_cpu_no_batch = tuple(input_array[0] for input_array in inputs_example_cpu)
+                output_example_cpu_no_batch = output_example_cpu[0]
+
+                inputs_combined = np.concatenate([input_array.flatten() for input_array in inputs_example_cpu_no_batch], axis=-1)
+                input_df = pd.DataFrame(inputs_combined)
+
+                try:
+                    signature = cf.models.infer_signature(input_df, output_example_cpu_no_batch)
+                    print('Inference Signature Correctly Saved!')
+                except Exception as e:
+                    print(f"Error inferring signature: {e}")
+                    signature = None
+
+                model_info = cf.pyfunc.log_model(
+                    artifact_path='informer-google-trace',
+                    python_model=exp,
+                    artifacts=artifacts,
+                    pip_requirements=[],
+                    input_example=input_df,
+                    signature=signature
+                )
+
+                print(f"Run_id", run.info.run_id)
+                print(f"Artifact_uri", run.info.artifact_uri)
+                print(f"Artifact_path", run.info.artifact_uri)
+                registered_models_list = cf.search_registered_models()
+                print(registered_models_list)
+
+
+                print('Returned String: ', f"{run.info.artifact_uri}/{model_info.artifact_path}")
+    except Exception as e:
+        print(f"Error starting run: {e}")
+        # Create a new run if the previous one doesn't exist
+        with cf.start_run(run_name='custom_model_run_informer') as run:
+            for ii in range(args.itr):
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(
+                    args.model, args.data, args.features, args.seq_len, args.label_len, args.pred_len, args.d_model, 
+                    args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, args.embed, 
+                    args.distil, args.mix, args.des, ii
+                )
+
+                cf.log_param("seq_len", args.seq_len)
+                cf.log_param("n_heads", args.n_heads)
+                cf.log_param("enc_lay", args.e_layers)
+                cf.log_param("pred_len", args.pred_len)
+                cf.log_param("dec_lay", args.d_layers)
+
+                exp = Exp(args)
+                print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                model = exp.train(setting)
+                print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                
+                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                test_results = exp.test(setting)
+
+                cf.log_metric("mae", test_results['mae'])
+                cf.log_metric("mse", test_results['mse'])
+                cf.log_metric("rmse", test_results['rmse'])
+                cf.log_metric("r2", test_results['r2'])
+
+                print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                preds = exp.predict(setting, True)
+
+                args_file_path = './args.txt'
+                with open(args_file_path, 'w') as f:
+                    for arg, value in vars(args).items():
+                        f.write(f"{arg}={value}\n")
+                artifacts = {"args.txt": args_file_path}
+
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                model.to(device)
+
+
+                print('ARGS before signature: ', args)
+
+                example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()
+                example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()
+                example_x_dec = torch.rand(1, args.pred_len, args.dec_in).to(device).float()
+                example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()
+                inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec, example_x_mark_dec)
+                output_example = model(*inputs_example)
+
+                inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor in inputs_example)
+                output_example_cpu = output_example.cpu().detach().numpy()
+                inputs_example_cpu_no_batch = tuple(input_array[0] for input_array in inputs_example_cpu)
+                output_example_cpu_no_batch = output_example_cpu[0]
+
+                inputs_combined = np.concatenate([input_array.flatten() for input_array in inputs_example_cpu_no_batch], axis=-1)
+                input_df = pd.DataFrame(inputs_combined)
+
+                try:
+                    signature = cf.models.infer_signature(input_df, output_example_cpu_no_batch)
+                    print('Inference Signature Correctly Saved!')
+                except Exception as e:
+                    print(f"Error inferring signature: {e}")
+                    signature = None
+
+                model_info = cf.pyfunc.log_model(
+                    artifact_path='informer-google-trace',
+                    python_model=exp,
+                    artifacts=artifacts,
+                    pip_requirements=[],
+                    input_example=input_df,
+                    signature=signature
+                )
+
+                print(f"Run_id", run.info.run_id)
+                print(f"Artifact_uri", run.info.artifact_uri)
+                print(f"Artifact_path", run.info.artifact_uri)
+                registered_models_list = cf.search_registered_models()
+                print(registered_models_list)
+
+
+                print('Returned String: ', f"{run.info.artifact_uri}/{model_info.artifact_path}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return "Error occurred during training"
+
     return f"{run.info.artifact_uri}/{model_info.artifact_path}"
 
 
@@ -273,7 +364,7 @@ def getmodel(name):
 
 getmodel_op=cf.create_component_from_func(func=getmodel,
         output_component_file='kserve-component.yaml',
-        base_image='burntt/bo-informer:v1',
+        base_image='burntt/nby-cogflow-informer:latest',
         packages_to_install=[])
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")

@@ -46,16 +46,32 @@ class Dataset_Custom(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
-        # cols = list(df_raw.columns); 
+        
+        print(f"Columns in df_raw: {df_raw.columns.tolist()}")
+        print(f"Target column: {self.target}")
+        
         if self.cols:
-            cols=self.cols.copy()
-            cols.remove(self.target)
+            cols = self.cols.copy()
+            if self.target not in cols:
+                print(f"Warning: Target column '{self.target}' not in specified columns.")
+            if 'date' not in cols:
+                print(f"Warning: 'date' column not in specified columns.")
+            cols = [col for col in cols if col != self.target and col != 'date']
         else:
-            cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
-        df_raw = df_raw[['date']+cols+[self.target]]
+            cols = list(df_raw.columns)
+            print(f"Columns before removal: {cols}")
+            if self.target in cols:
+                cols.remove(self.target)
+            else:
+                print(f"Warning: Target column '{self.target}' not found in DataFrame.")
+            if 'date' in cols:
+                cols.remove('date')
+            else:
+                print(f"Warning: 'date' column not found in DataFrame.")
+        
+        print(f"Columns after processing: {cols}")
+        
+        df_raw = df_raw[['date'] + cols + [self.target]]
 
         num_train = int(len(df_raw)*0.7)
         num_test = int(len(df_raw)*0.2)

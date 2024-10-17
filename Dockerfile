@@ -25,3 +25,7 @@ COPY ./run_cf_server.py .
 
 # Set the entry point to run the application
 ENTRYPOINT ["python", "run_cf_server.py"]
+
+
+# docker build -t burntt/nby-cogflow-informer:latest .
+# docker push burntt/nby-cogflow-informer:latest
