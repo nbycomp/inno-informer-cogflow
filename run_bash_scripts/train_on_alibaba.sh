@@ -1,4 +1,4 @@
-python3 -u run_cf_informer_local.py \
+python3 -u run_cf_machine.py \
   --experiment_name small_exp_1 \
   --model informer \
   --data alibaba_pod \

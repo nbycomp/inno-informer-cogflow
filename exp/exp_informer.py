@@ -68,16 +68,31 @@ class Exp_Informer(Exp_Basic):
         data_dict = {
             'alibaba_pod': Dataset_Custom
         }
-        Data = data_dict[self.args.data]
-        timeenc = 0 if args.embed!='timeF' else 1
+        
+        # Always use 'alibaba_pod' regardless of self.args.data
+        print(f"Debug: Original self.args.data = '{self.args.data}'")
+        print("Debug: Forcing use of 'alibaba_pod' dataset")
+        Data = data_dict['alibaba_pod']
+
+        timeenc = 0 if args.embed != 'timeF' else 1
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
-        elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
+            shuffle_flag = False
+            drop_last = True
+            batch_size = args.batch_size
+            freq = args.freq
+        elif flag == 'pred':
+            shuffle_flag = False
+            drop_last = False
+            batch_size = 1
+            freq = args.detail_freq
             Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = True
+            drop_last = True
+            batch_size = args.batch_size
+            freq = args.freq
+
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -85,18 +100,19 @@ class Exp_Informer(Exp_Basic):
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
-            inverse=args.inverse,
             timeenc=timeenc,
-            freq=freq,
-            cols=args.cols
+            freq=freq
         )
-        print(flag, len(data_set))
+        print(f"Debug: Dataset created with flag={flag}")
+
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
-            drop_last=drop_last)
+            drop_last=drop_last
+        )
+        print(f"Debug: DataLoader created with batch_size={batch_size}, shuffle={shuffle_flag}")
 
         return data_set, data_loader
 
