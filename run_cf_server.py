@@ -1,3 +1,4 @@
+import cogflow as cf
 
 def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->str:
     import sys
