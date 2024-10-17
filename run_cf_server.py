@@ -1,12 +1,7 @@
 import argparse
-import os
-import sys
-import torch
 import pandas as pd
 import numpy as np
 import cogflow as cf
-import logging
-import kserve
 
 def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->str:
     import sys
