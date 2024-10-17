@@ -21,7 +21,7 @@ COPY ./exp /exp
 COPY ./models /models
 COPY ./utils /utils
 COPY ./data /data
-COPY ./run_cogflow_integration_informer_V2.py .
+COPY ./run_cf_server.py .
 
 # Set the entry point to run the application
-ENTRYPOINT ["python", "run_cogflow_integration_informer_V2.py"]
+ENTRYPOINT ["python", "run_cf_server.py"]
