@@ -142,7 +142,7 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
                     signature = None
 
                 model_info = cf.pyfunc.log_model(
-                    artifact_path='informer-google-trace',
+                    artifact_path='informer-alibaba-pod',
                     python_model=exp,
                     artifacts=artifacts,
                     pip_requirements=[],
@@ -337,17 +337,25 @@ training_op = cf.create_component_from_func(
     packages_to_install=[]
 )
 
-def serving(model_uri, name):
+def serving(file_path, name):
+    import cogflow as cf
+    
     try:
-        import cogflow as cf
-        cf.serve_model_v1(model_uri, name)
-    except TypeError as e:
-        print(f"Encountered TypeError: {e}")
+        print(f"Loading model from path: {file_path}")
+        loaded_model = cf.pyfunc.load_model(file_path)
+        
+        print(f"Serving model with name: {name}")
+        cf.serve_model_v1(loaded_model, name)
+        
+        print("Model served successfully")
+    except FileNotFoundError:
+        print(f"Model file not found at path: {file_path}")
         raise
     except Exception as e:
-        print(f"Encountered an unexpected exception: {e}")
+        print(f"Error during model serving: {str(e)}")
         raise
-
+    
+    return "Model serving completed"
 
 
 kserve_op=cf.create_component_from_func(
@@ -369,18 +377,19 @@ getmodel_op=cf.create_component_from_func(func=getmodel,
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
-    preprocess_task = preprocess_op(file='/data/preprocssed_data.csv')
+    preprocess_task = preprocess_op(file=file)
     
     train_task = training_op(
         file=preprocess_task.outputs['output'],
-        args=preprocess_task.outputs['args']  # Pass the args output
+        args=preprocess_task.outputs['args']
     )
     
-    kserve_task = kserve_op(model_uri=train_task.outputs['Output'], name=isvc)
-    kserve_task.after(train_task)
+    # Pass the file path to the serving task
+    serve_task = kserve_op(file_path=train_task.output, name=isvc)
+    serve_task.after(train_task)
     
-    getmodel_task = getmodel_op(isvc)
-    getmodel_task.after(kserve_task)
+    getmodel_task = getmodel_op(name=isvc)
+    getmodel_task.after(serve_task)
 
 client = cf.client()
 client.create_run_from_pipeline_func(
