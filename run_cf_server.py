@@ -337,43 +337,29 @@ training_op = cf.create_component_from_func(
     packages_to_install=[]
 )
 
-def serving(file_path, name):
+def serving(model_uri, name):
     import cogflow as cf
     
     try:
-        print(f"Loading model from path: {file_path}")
-        loaded_model = cf.pyfunc.load_model(file_path)
-        
-        print(f"Serving model with name: {name}")
-        cf.serve_model_v1(loaded_model, name)
-        
-        print("Model served successfully")
-    except FileNotFoundError:
-        print(f"Model file not found at path: {file_path}")
-        raise
+        cf.serve_model_v1(model_uri, name)
+        print(f"Model served successfully: {name}")
     except Exception as e:
-        print(f"Error during model serving: {str(e)}")
+        print(f"Error serving model: {str(e)}")
         raise
-    
-    return "Model serving completed"
 
-
-kserve_op=cf.create_component_from_func(
+kserve_op = cf.create_component_from_func(
     func=serving,
-    output_component_file='kserve-component.yaml',
-    base_image='burntt/nby-cogflow-informer:latest',  # Example PyTorch image
-    packages_to_install=[]
+    output_component_file='kserve-component.yaml'
 )
 
 def getmodel(name):
     import cogflow as cf
     cf.get_model_url(name)
-    
 
-getmodel_op=cf.create_component_from_func(func=getmodel,
-        output_component_file='kserve-component.yaml',
-        base_image='burntt/nby-cogflow-informer:latest',
-        packages_to_install=[])
+getmodel_op = cf.create_component_from_func(
+    func=getmodel,
+    output_component_file='getmodel-component.yaml'
+)
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
@@ -384,8 +370,7 @@ def informer_pipeline(file, isvc):
         args=preprocess_task.outputs['args']
     )
     
-    # Pass the file path to the serving task
-    serve_task = kserve_op(file_path=train_task.output, name=isvc)
+    serve_task = kserve_op(model_uri=train_task.output, name=isvc)
     serve_task.after(train_task)
     
     getmodel_task = getmodel_op(name=isvc)
