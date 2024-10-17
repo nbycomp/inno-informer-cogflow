@@ -21,10 +21,6 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
     with open(args, 'r') as f:
         args = argparse.Namespace(**json.load(f))
 
-    # Explicitly set the device to CPU if use_gpu is False
-    device = torch.device("cuda" if args.use_gpu and torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-
     if args.use_gpu and args.use_multi_gpu:
         args.devices = args.devices.replace(' ', '')
         device_ids = args.devices.split(',')
@@ -102,7 +98,6 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
             exp = Exp(args)
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
             model = exp.train(setting)
-            model = model.to(device)
             print('>>>>>>>end training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
             
             print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
@@ -121,6 +116,10 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
                 for arg, value in vars(args).items():
                     f.write(f"{arg}={value}\n")
             artifacts = {"args.txt": args_file_path}
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model.to(device)
+
 
             print('ARGS before signature: ', args)
 
