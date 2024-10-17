@@ -8,6 +8,18 @@ numpy==1.24.3
 tqdm==4.66.2
 gym==0.26.2
 kserve==0.12.0
+ray==2.9.3
+tensorflow==2.17.0
+Flask<3
+alembic<2
+cloudpickle<3
+databricks-cli<1,>=0.8.7
+docker<7,>=4.0.0
+gitpython<4,>=2.1.0
+pyyaml<7,>=5.1
+sqlalchemy<2,>=1.4.0
+scipy<2
+shap<1,>=0.40
 setuptools==58.0.0
 
 # https://app.asana.com/0/1204116974603769/1207247344395045
