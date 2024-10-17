@@ -352,8 +352,8 @@ def serving(model_uri, name):
     try:
         print(f"Serving model from URI: {model_uri}")
         
-        # Attempt to serve the model with SSL verification disabled
-        cf.serve_model_v1(model_uri, name, verify_ssl=False)
+        # Attempt to serve the model without the verify_ssl parameter
+        cf.serve_model_v1(model_uri, name)
         
         print(f"Model served successfully with name: {name}")
     except Exception as e:
@@ -381,10 +381,13 @@ def serving(model_uri, name):
                 }
             }
             
+            # Try to create the InferenceService in the current namespace
+            current_namespace = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
+            
             api_instance.create_namespaced_custom_object(
                 group="serving.kserve.io",
                 version="v1beta1",
-                namespace="kubeflow",
+                namespace=current_namespace,
                 plural="inferenceservices",
                 body=inference_service
             )
