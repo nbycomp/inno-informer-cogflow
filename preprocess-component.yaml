@@ -37,32 +37,30 @@ implementation:
               'data': os.listdir('data')
           }
           df['directory_data'] = directory_data
-
           df.to_parquet(output_file)
 
-          # Save args to a JSON file
+          # Save args to a JSON file with updated values
           args_dict = {
-              'experiment_name': 'default_exp',
+              'experiment_name': 'small_exp_1',
               'model': 'informer',
-              'data': 'ETTh1',
-              'root_path': './ETDataset/ETT-small/',
-              'data_path': 'ETTh1.csv',
-              'features': 'M',
-              'target': 'OT',
-              'freq': 'h',
-              'checkpoints': './checkpoints/',
-              'seq_len': 96,
-              'label_len': 48,
-              'pred_len': 24,
-              'enc_in': 7,
-              'dec_in': 7,
-              'c_out': 7,
-              'd_model': 512,
-              'n_heads': 8,
-              'e_layers': 2,
+              'data': 'alibaba_pod',
+              'root_path': './data/',
+              'data_path': 'processed_data.csv',
+              'features': 'S',
+              'target': 'cpu_utilization',
+              'freq': '5min',
+              'checkpoints': './checkpoints',
+              'seq_len': 12,
+              'label_len': 12,
+              'pred_len': 6,
+              'enc_in': 1,
+              'dec_in': 1,
+              'c_out': 1,
+              'd_model': 32,
+              'n_heads': 4,
+              'e_layers': 1,
               'd_layers': 1,
-              's_layers': '3,2,1',
-              'd_ff': 2048,
+              'd_ff': 128,
               'factor': 5,
               'padding': 0,
               'distil': True,
@@ -74,13 +72,13 @@ implementation:
               'do_predict': False,
               'mix': True,
               'cols': None,
-              'num_workers': 0,
-              'itr': 2,
-              'train_epochs': 6,
-              'batch_size': 32,
-              'patience': 3,
-              'learning_rate': 0.0001,
-              'des': 'test',
+              'num_workers': 1,
+              'itr': 1,
+              'train_epochs': 1,
+              'batch_size': 16,
+              'patience': 1,
+              'learning_rate': 0.00001,
+              'des': 'small_exp',
               'loss': 'mse',
               'lradj': 'type1',
               'use_amp': False,
@@ -88,8 +86,9 @@ implementation:
               'use_gpu': True,
               'gpu': 0,
               'use_multi_gpu': False,
-              'devices': '0,1,2,3'
+              'devices': '0'
           }
+
           with open(args, 'w') as f:
               json.dump(args_dict, f)
 

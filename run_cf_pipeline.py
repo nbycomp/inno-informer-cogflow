@@ -37,7 +37,6 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
         args.target = data_info['T']
         args.enc_in, args.dec_in, args.c_out = data_info[args.features]
 
-    args.s_layers = [int(s_l) for s_l in args.s_layers.replace(' ', '').split(',')]
     args.detail_freq = args.freq
     args.freq = args.freq[-1:]
 

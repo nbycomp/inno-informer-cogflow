@@ -1,7 +1,7 @@
 name: Training
 inputs:
 - {name: file, type: parquet}
-- {name: args}
+- {name: args, type: json}
 outputs:
 - {name: Output, type: String}
 implementation:
@@ -16,25 +16,37 @@ implementation:
       python3 -u "$program_path" "$@"
     - "def training(file_path, args):\n    import sys\n    import os\n    import pandas\
       \ as pd\n    import torch\n    import numpy as np\n    import cogflow as cf\n\
-      \    import json\n\n    args = argparse.Namespace(**json.loads(args_json))\n\
-      \n    # Log the system path before appending directories\n    print(\"System\
-      \ path before appending directories:\")\n    print(sys.path)\n\n    # Add root\
-      \ and necessary directories to sys.path\n    sys.path.append('/')\n    sys.path.append('/exp')\n\
-      \    sys.path.append('/models')\n    sys.path.append('/utils')\n\n    # Log\
-      \ the system path after appending directories\n    print(\"System path after\
-      \ appending directories:\")\n    print(sys.path)\n\n    # Log the contents of\
-      \ each directory for debugging\n    directories_to_check = ['/exp', '/models',\
-      \ '/utils', '/data']\n    for directory in directories_to_check:\n        if\
-      \ os.path.isdir(directory):\n            print(f\"Contents of {directory}:\"\
-      )\n            print(os.listdir(directory))\n        else:\n            print(f\"\
-      {directory} is not a directory or does not exist.\")\n\n    # Attempt to import\
-      \ the required module\n    try:\n        from exp.exp_informer import Exp_Informer\n\
-      \        print(\"Import successful.\")\n    except ModuleNotFoundError as e:\n\
-      \        print(f\"ModuleNotFoundError: {e}\")\n        return \"Module import\
-      \ failed\"\n\n    Exp = Exp_Informer\n\n    cf.autolog()\n    cf.pytorch.autolog()\n\
-      \    experiment_id = cf.set_experiment(\n        experiment_name=\"Custom Model\
-      \ Informer Time-Series\",\n    )\n    with cf.start_run('custom_model_run_informer')\
-      \ as run:\n        for ii in range(args.itr):\n            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(\n\
+      \    import json\n\n    # Load the args from the JSON file\n    with open(args,\
+      \ 'r') as f:\n        args = argparse.Namespace(**json.load(f))\n\n    if args.use_gpu\
+      \ and args.use_multi_gpu:\n        args.devices = args.devices.replace(' ',\
+      \ '')\n        device_ids = args.devices.split(',')\n        args.device_ids\
+      \ = [int(id_) for id_ in device_ids]\n        args.gpu = args.device_ids[0]\n\
+      \n    data_parser = {\n        'alibaba_pod': {'data': 'processed_data.csv',\
+      \ 'T': 'avg_cpu_usage', 'M': [10, 10, 10], 'S': [1, 1, 1], 'MS': [10, 10, 10]},\n\
+      \    }\n\n    if args.data in data_parser.keys():\n        data_info = data_parser[args.data]\n\
+      \        args.data_path = data_info['data']\n        args.target = data_info['T']\n\
+      \        args.enc_in, args.dec_in, args.c_out = data_info[args.features]\n\n\
+      \    args.s_layers = [int(s_l) for s_l in args.s_layers.replace(' ', '').split(',')]\n\
+      \    args.detail_freq = args.freq\n    args.freq = args.freq[-1:]\n\n    print('Args\
+      \ in experiment:')\n    print(args, '\\n')\n\n    # Log the system path before\
+      \ appending directories\n    print(\"System path before appending directories:\"\
+      )\n    print(sys.path)\n\n    # Add root and necessary directories to sys.path\n\
+      \    sys.path.append('/')\n    sys.path.append('/exp')\n    sys.path.append('/models')\n\
+      \    sys.path.append('/utils')\n\n    # Log the system path after appending\
+      \ directories\n    print(\"System path after appending directories:\")\n   \
+      \ print(sys.path)\n\n    # Log the contents of each directory for debugging\n\
+      \    directories_to_check = ['/exp', '/models', '/utils', '/data']\n    for\
+      \ directory in directories_to_check:\n        if os.path.isdir(directory):\n\
+      \            print(f\"Contents of {directory}:\")\n            print(os.listdir(directory))\n\
+      \        else:\n            print(f\"{directory} is not a directory or does\
+      \ not exist.\")\n\n    # Attempt to import the required module\n    try:\n \
+      \       from exp.exp_informer import Exp_Informer\n        print(\"Import successful.\"\
+      )\n    except ModuleNotFoundError as e:\n        print(f\"ModuleNotFoundError:\
+      \ {e}\")\n        return \"Module import failed\"\n\n    Exp = Exp_Informer\n\
+      \n    cf.autolog()\n    cf.pytorch.autolog()\n    experiment_id = cf.set_experiment(\n\
+      \        experiment_name=\"Custom Model Informer Time-Series\",\n    )\n   \
+      \ with cf.start_run('custom_model_run_informer') as run:\n        for ii in\
+      \ range(args.itr):\n            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(\n\
       \                args.model, args.data, args.features, args.seq_len, args.label_len,\
       \ args.pred_len, args.d_model, \n                args.n_heads, args.e_layers,\
       \ args.d_layers, args.d_ff, args.attn, args.factor, args.embed, \n         \
@@ -55,11 +67,11 @@ implementation:
       \         for arg, value in vars(args).items():\n                    f.write(f\"\
       {arg}={value}\\n\")\n            artifacts = {\"args.txt\": args_file_path}\n\
       \n            device = torch.device(\"cuda\" if torch.cuda.is_available() else\
-      \ \"cpu\")\n            model.to(device)\n\n            example_x_enc = torch.rand(1,\
-      \ args.seq_len, args.enc_in).to(device).float()\n            example_x_mark_enc\
-      \ = torch.rand(1, args.seq_len, 1).to(device).float()\n            example_x_dec\
-      \ = torch.rand(1, args.pred_len, args.dec_in).to(device).float()\n         \
-      \   example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()\n\
+      \ \"cpu\")\n            model.to(device)\n\n            print('ARGS before signature:\
+      \ ', args)\n\n            example_x_enc = torch.rand(1, args.seq_len, args.enc_in).to(device).float()\n\
+      \            example_x_mark_enc = torch.rand(1, args.seq_len, 1).to(device).float()\n\
+      \            example_x_dec = torch.rand(1, args.pred_len, args.dec_in).to(device).float()\n\
+      \            example_x_mark_dec = torch.rand(1, args.pred_len, 1).to(device).float()\n\
       \            inputs_example = (example_x_enc, example_x_mark_enc, example_x_dec,\
       \ example_x_mark_dec)\n            output_example = model(*inputs_example)\n\
       \n            inputs_example_cpu = tuple(tensor.cpu().detach().numpy() for tensor\
@@ -79,7 +91,8 @@ implementation:
       Run_id\", run.info.run_id)\n            print(f\"Artifact_uri\", run.info.artifact_uri)\n\
       \            print(f\"Artifact_path\", run.info.artifact_uri)\n            registered_models_list\
       \ = cf.search_registered_models()\n            print(registered_models_list)\n\
-      \n    return f\"{run.info.artifact_uri}/{model_info.artifact_path}\"\n\ndef\
+      \n            print('Returned String: ', f\"{run.info.artifact_uri}/{model_info.artifact_path}\"\
+      )\n    return f\"{run.info.artifact_uri}/{model_info.artifact_path}\"\n\ndef\
       \ _serialize_str(str_value: str) -> str:\n    if not isinstance(str_value, str):\n\
       \        raise TypeError('Value \"{}\" has type \"{}\" instead of str.'.format(\n\
       \            str(str_value), str(type(str_value))))\n    return str_value\n\n\
@@ -97,6 +110,6 @@ implementation:
     - --file
     - {inputPath: file}
     - --args
-    - {inputValue: args}
+    - {inputPath: args}
     - '----output-paths'
     - {outputPath: Output}
