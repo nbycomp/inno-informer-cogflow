@@ -406,13 +406,19 @@ kserve_op = cf.create_component_from_func(
     packages_to_install=['kubernetes']
 )
 
-def getmodel(name):
+def getmodel(name: str) -> str:
     import cogflow as cf
-    cf.get_model_url(name)
+    import os
+    import warnings
+    
+    # Return the model URL
+    return cf.get_model_url(name)
 
 getmodel_op = cf.create_component_from_func(
     func=getmodel,
-    output_component_file='getmodel-component.yaml'
+    output_component_file='getmodel-component.yaml',
+    base_image='burntt/nby-cogflow-informer:latest',  # Added base image that contains cogflow
+    packages_to_install=[]  # Specify any additional packages if needed
 )
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
