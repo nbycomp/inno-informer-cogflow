@@ -1,7 +1,7 @@
 import requests
 import json
 import numpy as np
-import pandas as pd
+import cogflow  # Import cogflow to get model URL
 
 def create_inference_request(seq_len=12, pred_len=6, enc_in=1, dec_in=1):
     """
@@ -56,25 +56,34 @@ def create_inference_request(seq_len=12, pred_len=6, enc_in=1, dec_in=1):
     
     return inference_request
 
+def get_model_signature(model_url):
+    """Get the model signature to verify input/output format"""
+    try:
+        response = requests.get(f"{model_url}/v2/models/informer-serving-inference")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error getting model signature: {response.status_code}")
+            print(f"Response: {response.text}")
+            return None
+    except Exception as e:
+        print(f"Error getting model signature: {str(e)}")
+        return None
+
 def run_inference(model_url, request_data):
     """
     Sends an inference request to the deployed model.
-    
-    Args:
-        model_url (str): URL of the deployed model
-        request_data (dict): Formatted inference request data
     """
     headers = {
         "Content-Type": "application/json"
     }
     
     try:
-        # Send POST request to the model's inference endpoint
+        # Make sure to add /infer to the endpoint
         response = requests.post(
             f"{model_url}/v2/models/informer-serving-inference/infer",
             headers=headers,
-            data=json.dumps(request_data),
-            verify=False
+            data=json.dumps(request_data)
         )
         
         if response.status_code == 200:
@@ -89,16 +98,22 @@ def run_inference(model_url, request_data):
         return None
 
 if __name__ == "__main__":
-    # Create the inference request with the correct dimensions from args_dict
-    request_data = create_inference_request(
-        seq_len=12,    # From args_dict['seq_len']
-        pred_len=6,    # From args_dict['pred_len']
-        enc_in=1,      # From args_dict['enc_in']
-        dec_in=1       # From args_dict['dec_in']
-    )
+    # Get the model URL using cogflow
+    model_url = cogflow.get_model_url(model_name="informer-serving-inference")
+    print(f"Model URL: {model_url}")
     
-    # Model URL (replace with your actual model URL)
-    model_url = "http://informer-serving-inference.adminh.svc.cluster.local"
+    # First, get the model signature
+    signature = get_model_signature(model_url)
+    if signature:
+        print("Model signature:", json.dumps(signature, indent=2))
+    
+    # Create the inference request with the correct dimensions
+    request_data = create_inference_request(
+        seq_len=12,
+        pred_len=6,
+        enc_in=1,
+        dec_in=1
+    )
     
     # Run inference
     result = run_inference(model_url, request_data)
@@ -106,7 +121,6 @@ if __name__ == "__main__":
     if result:
         print("Inference successful!")
         print("Predictions:", result)
-        # Expected output shape: [1, 6, 1] (batch_size, pred_len, output_features)
     else:
         print("Inference failed!")
 
