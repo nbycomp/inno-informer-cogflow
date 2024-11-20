@@ -8,39 +8,50 @@ def create_inference_request(seq_len=12, pred_len=6, enc_in=1, dec_in=1):
     Creates a properly formatted inference request for the Informer model.
     
     Args:
-        seq_len (int): Sequence length for input
-        pred_len (int): Prediction length
-        enc_in (int): Number of input features for encoder
-        dec_in (int): Number of input features for decoder
+        seq_len (int): Sequence length for encoder input (12)
+        pred_len (int): Prediction length (6)
+        enc_in (int): Number of input features for encoder (1)
+        dec_in (int): Number of input features for decoder (1)
     """
-    # Create random example data matching the model's expected input format
-    x_enc = np.random.rand(seq_len, enc_in)
-    x_mark_enc = np.random.rand(seq_len, 1)
-    x_dec = np.random.rand(pred_len, dec_in)
-    x_mark_dec = np.random.rand(pred_len, 1)
+    # Create the four input tensors with correct shapes
+    x_enc = np.random.rand(1, seq_len, enc_in).astype(np.float32)
+    x_mark_enc = np.random.rand(1, seq_len, 1).astype(np.float32)  # 1 feature for marking
+    x_dec = np.random.rand(1, pred_len, dec_in).astype(np.float32)
+    x_mark_dec = np.random.rand(1, pred_len, 1).astype(np.float32)  # 1 feature for marking
     
-    # Flatten and concatenate all inputs as per the model's signature
-    inputs_combined = np.concatenate([
-        x_enc.flatten(),
-        x_mark_enc.flatten(),
-        x_dec.flatten(),
-        x_mark_dec.flatten()
-    ])
-    
-    # Convert to DataFrame and then to list for JSON serialization
-    input_df = pd.DataFrame(inputs_combined).T
-    input_data = input_df.values.tolist()[0]
-    
-    # Create the inference request JSON
+    # Create the inference request JSON following the example format
     inference_request = {
         "inputs": [
             {
-                "name": "input_0",
-                "shape": [1, len(input_data)],
+                "name": "input0",
                 "datatype": "FP32",
-                "data": input_data
+                "shape": [1, seq_len, enc_in],
+                "parameters": {"content_type": "np"},
+                "data": x_enc.tolist()
+            },
+            {
+                "name": "input1",
+                "datatype": "FP32",
+                "shape": [1, seq_len, 1],  # Changed to 1 marking feature
+                "parameters": {"content_type": "np"},
+                "data": x_mark_enc.tolist()
+            },
+            {
+                "name": "input2",
+                "datatype": "FP32",
+                "shape": [1, pred_len, dec_in],
+                "parameters": {"content_type": "np"},
+                "data": x_dec.tolist()
+            },
+            {
+                "name": "input3",
+                "datatype": "FP32",
+                "shape": [1, pred_len, 1],  # Changed to 1 marking feature
+                "parameters": {"content_type": "np"},
+                "data": x_mark_dec.tolist()
             }
-        ]
+        ],
+        "parameters": {"content_type": "np"}
     }
     
     return inference_request
@@ -63,7 +74,7 @@ def run_inference(model_url, request_data):
             f"{model_url}/v2/models/informer-serving-inference/infer",
             headers=headers,
             data=json.dumps(request_data),
-            verify=False  # Note: In production, you should handle SSL verification properly
+            verify=False
         )
         
         if response.status_code == 200:
@@ -78,8 +89,13 @@ def run_inference(model_url, request_data):
         return None
 
 if __name__ == "__main__":
-    # Create the inference request
-    request_data = create_inference_request()
+    # Create the inference request with the correct dimensions from args_dict
+    request_data = create_inference_request(
+        seq_len=12,    # From args_dict['seq_len']
+        pred_len=6,    # From args_dict['pred_len']
+        enc_in=1,      # From args_dict['enc_in']
+        dec_in=1       # From args_dict['dec_in']
+    )
     
     # Model URL (replace with your actual model URL)
     model_url = "http://informer-serving-inference.adminh.svc.cluster.local"
@@ -90,17 +106,17 @@ if __name__ == "__main__":
     if result:
         print("Inference successful!")
         print("Predictions:", result)
+        # Expected output shape: [1, 6, 1] (batch_size, pred_len, output_features)
     else:
         print("Inference failed!")
 
-# Example of how to use the prediction results
 """
-# The response will be in this format:
+Expected response format:
 {
     "outputs": [
         {
-            "name": "output_0",
-            "shape": [1, pred_len],  # pred_len is your prediction length (6 in your case)
+            "name": "output0",
+            "shape": [1, 6, 1],  # batch_size, pred_len, output_features
             "datatype": "FP32",
             "data": [...]  # Predicted values
         }
