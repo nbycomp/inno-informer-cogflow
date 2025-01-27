@@ -350,12 +350,17 @@ def serving(model_uri, name):
     os.environ['CURL_CA_BUNDLE'] = ''
     
     try:
+        print(f"Attempting to delete existing model service: {name}")
+        try:
+            cf.delete_served_model(name)
+            print(f"Successfully deleted existing model service: {name}")
+        except Exception as del_e:
+            print(f"No existing model service to delete or error during deletion: {str(del_e)}")
+        
         print(f"Serving model from URI: {model_uri}")
-        
-        # Attempt to serve the model without the verify_ssl parameter
         cf.serve_model_v1(model_uri, name)
-        
         print(f"Model served successfully with name: {name}")
+        
     except Exception as e:
         print(f"Error during model serving: {str(e)}")
         
