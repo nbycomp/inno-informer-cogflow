@@ -2,7 +2,7 @@
 FROM python:3.10-slim
 
 # Set the working directory in the container
-WORKDIR /
+WORKDIR /app
 
 # Copy the Python requirements file into the container
 COPY ./requirements.txt .
@@ -17,11 +17,17 @@ RUN apt-get update && \
 RUN pip install -r requirements.txt
 
 # Copy the rest of the application's code into the container
-COPY ./exp /exp
-COPY ./models /models
-COPY ./utils /utils
-COPY ./data /data
+COPY ./exp ./exp
+COPY ./models ./models
+COPY ./utils ./utils
+COPY ./data ./data
 COPY ./run_cf_server.py .
+
+# Add the current directory to PYTHONPATH
+ENV PYTHONPATH="/app:${PYTHONPATH}"
+
+# Verify exp module is present
+RUN python -c "import exp; print('exp module successfully imported')"
 
 # Set the entry point to run the application
 ENTRYPOINT ["python", "run_cf_server.py"]
