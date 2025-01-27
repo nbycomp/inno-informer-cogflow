@@ -1,6 +1,6 @@
 import cogflow as cf
 
-def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->str:
+def training(file_path: cf.InputPath('parquet'), args: cf.InputPath('json'))->str:
     import sys
     import os
     import argparse
@@ -251,7 +251,7 @@ def training(file_path: cf.input_path('parquet'), args: cf.input_path('json'))->
 
 ##################################################### PIPELINE ###########################################################
 
-def preprocess(file_path: cf.input_path('CSV'), output_file: cf.output_path('parquet'), args: cf.output_path('json')):
+def preprocess(file_path: cf.InputPath('CSV'), output_file: cf.OutputPath('parquet'), args: cf.OutputPath('json')):
     import pandas as pd
     import shutil
     import os
@@ -410,47 +410,15 @@ def getmodel(name: str) -> str:
     import cogflow as cf
     import os
     import warnings
-    from kubernetes import client, config
-    import time
     
-    try:
-        # Try to get the model URL directly first
-        model_url = cf.get_model_url(name)
-        return model_url
-    except Exception as e:
-        print(f"Direct URL fetch failed: {str(e)}")
-        
-        try:
-            # Fallback: construct URL manually
-            # Load kubernetes configuration
-            config.load_incluster_config()
-            
-            # Get current namespace
-            with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
-                namespace = f.read().strip()
-            
-            # Construct the standard KServe URL format
-            model_url = f"http://{name}.{namespace}.svc.cluster.local"
-            print(f"Constructed URL: {model_url}")
-            
-            # Verify the service exists
-            v1 = client.CoreV1Api()
-            try:
-                v1.read_namespaced_service(name, namespace)
-                return model_url
-            except Exception as svc_error:
-                print(f"Service verification failed: {str(svc_error)}")
-                return f"Service not found: {model_url}"
-            
-        except Exception as k8s_error:
-            print(f"Kubernetes operation failed: {str(k8s_error)}")
-            return "Error: Unable to determine model URL"
+    # Return the model URL
+    return cf.get_model_url(name)
 
 getmodel_op = cf.create_component_from_func(
     func=getmodel,
     output_component_file='getmodel-component.yaml',
-    base_image='burntt/nby-cogflow-informer:latest',
-    packages_to_install=['kubernetes']
+    base_image='burntt/nby-cogflow-informer:latest',  # Added base image that contains cogflow
+    packages_to_install=[]  # Specify any additional packages if needed
 )
 
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
