@@ -342,65 +342,63 @@ def serving(model_uri, name):
     import os
     import urllib3
     import warnings
+    from kubernetes import client, config
+    import time
     
     # Suppress InsecureRequestWarning
     warnings.filterwarnings('ignore', category=urllib3.exceptions.InsecureRequestWarning)
-    
-    # Disable SSL verification (use with caution)
     os.environ['CURL_CA_BUNDLE'] = ''
     
     try:
-        print(f"Attempting to delete existing model service: {name}")
+        # Initialize Kubernetes client
+        config.load_incluster_config()
+        api_instance = client.CustomObjectsApi()
+        current_namespace = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
+        
+        # Try to delete existing service if it exists
         try:
-            cf.delete_served_model(name)
-            print(f"Successfully deleted existing model service: {name}")
-        except Exception as del_e:
-            print(f"No existing model service to delete or error during deletion: {str(del_e)}")
-        
-        print(f"Serving model from URI: {model_uri}")
-        cf.serve_model_v1(model_uri, name)
-        print(f"Model served successfully with name: {name}")
-        
-    except Exception as e:
-        print(f"Error during model serving: {str(e)}")
-        
-        # If the first attempt fails, try an alternative method
-        try:
-            from kubernetes import client, config
-            
-            print("Attempting alternative serving method...")
-            config.load_incluster_config()
-            api_instance = client.CustomObjectsApi()
-            
-            inference_service = {
-                "apiVersion": "serving.kserve.io/v1beta1",
-                "kind": "InferenceService",
-                "metadata": {"name": name},
-                "spec": {
-                    "predictor": {
-                        "model": {
-                            "modelFormat": {"name": "mlflow"},
-                            "storageUri": model_uri
-                        }
-                    }
-                }
-            }
-            
-            # Try to create the InferenceService in the current namespace
-            current_namespace = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
-            
-            api_instance.create_namespaced_custom_object(
+            api_instance.delete_namespaced_custom_object(
                 group="serving.kserve.io",
                 version="v1beta1",
                 namespace=current_namespace,
                 plural="inferenceservices",
-                body=inference_service
+                name=name
             )
-            
-            print(f"Model served successfully using alternative method with name: {name}")
-        except Exception as alt_e:
-            print(f"Error during alternative serving method: {str(alt_e)}")
-            raise
+            print(f"Existing inference service {name} deleted successfully")
+            # Wait for deletion to complete
+            time.sleep(10)
+        except client.exceptions.ApiException as e:
+            if e.status != 404:  # Only log if error is not "Not Found"
+                print(f"Warning during deletion: {str(e)}")
+        
+        # Create new inference service
+        inference_service = {
+            "apiVersion": "serving.kserve.io/v1beta1",
+            "kind": "InferenceService",
+            "metadata": {"name": name},
+            "spec": {
+                "predictor": {
+                    "model": {
+                        "modelFormat": {"name": "mlflow"},
+                        "storageUri": model_uri
+                    }
+                }
+            }
+        }
+        
+        # Create the new service
+        api_instance.create_namespaced_custom_object(
+            group="serving.kserve.io",
+            version="v1beta1",
+            namespace=current_namespace,
+            plural="inferenceservices",
+            body=inference_service
+        )
+        print(f"Model served successfully with name: {name}")
+        
+    except Exception as e:
+        print(f"Error during model serving: {str(e)}")
+        raise
     
     return "Model serving completed"
 
@@ -415,9 +413,50 @@ def getmodel(name: str) -> str:
     import cogflow as cf
     import os
     import warnings
+    from kubernetes import client, config
+    import time
     
-    # Return the model URL
-    return cf.get_model_url(name)
+    try:
+        # Initialize Kubernetes client
+        config.load_incluster_config()
+        api_instance = client.CustomObjectsApi()
+        current_namespace = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
+        
+        # Wait for the inference service to be ready (max 5 minutes)
+        max_retries = 30
+        retry_interval = 10
+        
+        for i in range(max_retries):
+            try:
+                isvc = api_instance.get_namespaced_custom_object(
+                    group="serving.kserve.io",
+                    version="v1beta1",
+                    namespace=current_namespace,
+                    plural="inferenceservices",
+                    name=name
+                )
+                
+                # Check if the service is ready
+                if isvc.get("status", {}).get("conditions"):
+                    for condition in isvc["status"]["conditions"]:
+                        if condition["type"] == "Ready" and condition["status"] == "True":
+                            # Service is ready, construct and return the URL
+                            host = isvc["status"]["url"]
+                            return f"http://{host}/v2/models/{name}/infer"
+                
+                print(f"Waiting for inference service to be ready (attempt {i+1}/{max_retries})")
+                time.sleep(retry_interval)
+                
+            except client.exceptions.ApiException as e:
+                print(f"Error checking service status: {str(e)}")
+                time.sleep(retry_interval)
+        
+        raise Exception(f"Timeout waiting for inference service {name} to be ready")
+        
+    except Exception as e:
+        print(f"Error getting model URL: {str(e)}")
+        # Return a default URL or raise the exception based on your needs
+        raise
 
 getmodel_op = cf.create_component_from_func(
     func=getmodel,
