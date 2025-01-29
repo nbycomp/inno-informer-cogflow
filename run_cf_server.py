@@ -409,62 +409,6 @@ kserve_op = cf.create_component_from_func(
     packages_to_install=['kubernetes']
 )
 
-def getmodel(name: str) -> str:
-    import cogflow as cf
-    import os
-    import warnings
-    from kubernetes import client, config
-    import time
-    
-    try:
-        # Initialize Kubernetes client
-        config.load_incluster_config()
-        api_instance = client.CustomObjectsApi()
-        current_namespace = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
-        
-        # Wait for the inference service to be ready (max 5 minutes)
-        max_retries = 30
-        retry_interval = 10
-        
-        for i in range(max_retries):
-            try:
-                isvc = api_instance.get_namespaced_custom_object(
-                    group="serving.kserve.io",
-                    version="v1beta1",
-                    namespace=current_namespace,
-                    plural="inferenceservices",
-                    name=name
-                )
-                
-                # Check if the service is ready
-                if isvc.get("status", {}).get("conditions"):
-                    for condition in isvc["status"]["conditions"]:
-                        if condition["type"] == "Ready" and condition["status"] == "True":
-                            # Service is ready, construct and return the URL
-                            host = isvc["status"]["url"]
-                            return f"http://{host}/v2/models/{name}/infer"
-                
-                print(f"Waiting for inference service to be ready (attempt {i+1}/{max_retries})")
-                time.sleep(retry_interval)
-                
-            except client.exceptions.ApiException as e:
-                print(f"Error checking service status: {str(e)}")
-                time.sleep(retry_interval)
-        
-        raise Exception(f"Timeout waiting for inference service {name} to be ready")
-        
-    except Exception as e:
-        print(f"Error getting model URL: {str(e)}")
-        # Return a default URL or raise the exception based on your needs
-        raise
-
-getmodel_op = cf.create_component_from_func(
-    func=getmodel,
-    output_component_file='getmodel-component.yaml',
-    base_image='burntt/nby-cogflow-informer:latest',  # Added base image that contains cogflow
-    packages_to_install=[]  # Specify any additional packages if needed
-)
-
 @cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
 def informer_pipeline(file, isvc):
     preprocess_task = preprocess_op(file=file)
@@ -476,9 +420,6 @@ def informer_pipeline(file, isvc):
     
     serve_task = kserve_op(model_uri=train_task.output, name=isvc)
     serve_task.after(train_task)
-    
-    getmodel_task = getmodel_op(name=isvc)
-    getmodel_task.after(serve_task)
 
 client = cf.client()
 client.create_run_from_pipeline_func(
