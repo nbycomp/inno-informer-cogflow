@@ -16,7 +16,7 @@ The integration involves several key steps:
 
 ### Informer Model: Why?
 
-The Informer model is a specialized variant of the transformer architecture, designed to efficiently handle long-sequence time-series forecasting. It leverages sparse attention mechanisms to reduce computational complexity, making it highly suitable for real-time applications in edge computing environments. This efficiency is achieved by focusing on the most relevant data points, ensuring the model captures long-range dependencies without the high computational cost of full attention.
+The Informer model is a specialized variant of the transformer architecture, designed to efficiently handle long-sequence time-series forecasting. It leverages sparse attention mechanisms to significantly reduce computational complexity, making it highly suitable for real-time applications in edge computing environments. This efficiency is achieved by focusing on the most relevant data points, ensuring the model captures long-range dependencies without the high computational cost of full attention.
 
 Key innovations of the Informer include attention distilling, which further enhances memory efficiency by eliminating redundant entries in the attention matrix, and a generative-style decoder that outputs entire sequences in a single step. These features collectively accelerate the forecasting process and enable effective parallelization, crucial for time-critical use cases.
 
