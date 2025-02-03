@@ -39,6 +39,8 @@ Below is a high-level representation of the pipeline:
 - **Training**: The Informer model is trained using the preprocessed data and the specified arguments.
 - **Deployment**: Finally, the trained model is deployed as an inference service, completing the pipeline process.
 
+![image](https://github.com/user-attachments/assets/06a71f0e-ab79-4d4d-9403-17bed2f59afa)
+
 
 ## Preprocessing
 
