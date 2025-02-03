@@ -14,6 +14,14 @@ The integration involves several key steps:
 2. **Pipeline Implementation**: Developing a pipeline that seamlessly connects data preprocessing, model training, and deployment stages.
 3. **Execution and Deployment**: Running the pipeline within the CF to train the Informer model and deploy it as an inference service.
 
+### Informer Model: Why?
+
+The Informer model is a specialized variant of the transformer architecture, designed to efficiently handle long-sequence time-series forecasting. It leverages sparse attention mechanisms to reduce computational complexity from \(O(n^2)\) to \(O(n \log n)\), making it highly suitable for real-time applications in edge computing environments. This efficiency is achieved by focusing on the most relevant data points, ensuring the model captures long-range dependencies without the high computational cost of full attention.
+
+Key innovations of the Informer include attention distilling, which further enhances memory efficiency by eliminating redundant entries in the attention matrix, and a generative-style decoder that outputs entire sequences in a single step. These features collectively accelerate the forecasting process and enable effective parallelization, crucial for time-critical use cases.
+
+Despite its advantages in efficiency and speed, the Informer model's implementation complexity can be a challenge. Its specialized architecture requires careful tuning and ample training data to fully realize its potential. However, when properly configured, Informers offer a compelling balance of performance and computational efficiency, making them a powerful tool for long-sequence forecasting tasks.
+
 ### Initial Setup in the CF Framework: Creation of the Notebook
 
 The integration process begins with setting up a new project in the Cognitive Framework specifically for the Informer model. Within this project, a Jupyter notebook is created to serve as the central platform for development and execution. The notebook is configured with all necessary dependencies, including Python libraries such as PyTorch for deep learning and any Informer-specific modules.
@@ -27,21 +35,10 @@ The core component of the integration is the pipeline that automates the entire 
 
 Below is a high-level representation of the pipeline:
 
-# Pseudo-code of the Informer pipeline
+- **Preprocessing**: The pipeline begins with preprocessing the input data, where the data is prepared and necessary arguments are set.
+- **Training**: The Informer model is trained using the preprocessed data and the specified arguments.
+- **Deployment**: Finally, the trained model is deployed as an inference service, completing the pipeline process.
 
-```
-def informer_pipeline(file, isvc):
-    # Preprocess the input data
-    preprocessed_data, args = preprocess(file)
-    
-    # Train the Informer model with the preprocessed data and arguments
-    model_uri = training(preprocessed_data, args)
-    
-    # Deploy the trained model as an inference service
-    serving_status = serving(model_uri, isvc)
-    
-    return serving_status
-```
 
 ## Preprocessing
 
