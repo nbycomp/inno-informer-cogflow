@@ -22,11 +22,11 @@ Key innovations of the Informer include attention distilling, which further enha
 
 Despite its advantages in efficiency and speed, the Informer model's implementation complexity can be a challenge. Its specialized architecture requires careful tuning and ample training data to fully realize its potential. However, when properly configured, Informers offer a compelling balance of performance and computational efficiency, making them a powerful tool for long-sequence forecasting tasks.
 
-### Initial Setup in the CF Framework: Creation of the Notebook
+### Initial Setup in the CF Framework: Creation of the Development Environment
 
-The integration process begins with setting up a new project in the Cognitive Framework specifically for the Informer model. Within this project, a Jupyter notebook is created to serve as the central platform for development and execution. The notebook is configured with all necessary dependencies, including Python libraries such as PyTorch for deep learning and any Informer-specific modules.
+The integration process begins with setting up a new project in the Cognitive Framework specifically for the Informer model. Within this project, a VSCode web environment is utilized, running a Docker image preloaded with all necessary dependencies, including Python libraries such as PyTorch for deep learning and any Informer-specific modules.
 
-Creating the notebook involves selecting the appropriate kernel that supports the required libraries and ensuring that the computational resources allocated are sufficient for both training and inference tasks. The interactive nature of the Jupyter notebook allows for real-time code execution, visualization of results, and iterative development, which is essential for fine-tuning the model and addressing any integration challenges.
+Setting up the environment involves selecting the appropriate Docker image that supports the required libraries and ensuring that the computational resources allocated are sufficient for both training and inference tasks. The interactive nature of the VSCode web environment allows for real-time code execution, visualization of results, and iterative development.
 
 
 ## Pipeline
