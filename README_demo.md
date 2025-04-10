@@ -233,7 +233,7 @@ The development environment played a crucial role in facilitating the integratio
 
 The CodeFlow environment significantly accelerated development by providing immediate feedback on code changes and pipeline execution. This environment includes built-in support for Docker containerization, enabling consistent development and production environments. The integration with Visual Studio Code provides familiar tools for code authoring, debugging, and version control, essential for collaborative development of complex MLOps pipelines.
 
-### View of the in-environment IDE
+### Cogflow's Integrated Development Environment
 
 The Cogflow environment provides a fully-featured IDE for model development and pipeline construction. Figure 2 shows the development interface with active code editing capabilities.
 
