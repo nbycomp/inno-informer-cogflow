@@ -157,6 +157,33 @@ client.create_run_from_pipeline_func(
 )
 ```
 
+## Demo Screenshots
+
+### Experiment Tracking UI
+
+![Experiment Tracking Dashboard](path/to/experiment_tracking_screenshot.png)
+*The experiment tracking dashboard shows all runs with their metrics and parameters for easy comparison.*
+
+### Model Registry
+
+![Model Registry](path/to/model_registry_screenshot.png)
+*The model registry interface displays all registered models with their versions and deployment status.*
+
+### Pipeline Orchestration
+
+![Pipeline Execution](path/to/pipeline_execution_screenshot.png)
+*A visual representation of the pipeline execution, showing each component's status and data flow.*
+
+### Serving Interface
+
+![Model Serving Dashboard](path/to/serving_dashboard_screenshot.png)
+*The model serving dashboard shows deployed models with their endpoints and performance metrics.*
+
+### End-to-End Workflow
+
+![Complete Workflow](path/to/complete_workflow_screenshot.png)
+*An overview of the complete workflow from data ingestion to model serving.*
+
 ## Conclusion
 
 Cogflow provides a unified platform for managing the entire machine learning lifecycle, helping teams collaborate more effectively, reproduce experiments reliably, and deploy models with confidence. By integrating with popular tools and frameworks, Cogflow ensures flexibility while maintaining a consistent workflow from experimentation to production.
