@@ -1,4 +1,3 @@
-
 # Integrating with CogFlow: A Comprehensive Guide
 
 Welcome to the comprehensive guide on integrating with CogFlow, the Cognitive Framework plugin that enhances the capabilities of your machine learning workflows. This document provides detailed instructions and examples to help you seamlessly integrate various tools and manage your ML models effectively.
@@ -19,21 +18,58 @@ CogFlow is a cognitive framework plugin that enables easy integration with multi
 Ensure you have the required dependencies installed before setting up CogFlow:
 
 ```bash
-pip install cogflow tensorflow torch mlflow
+pip install cogflow-ml
+# Or install with specific components
+pip install cogflow-ml[pytorch,tensorflow]
 ```
 
-### Initialization
+### Basic Usage
 
 Import and initialize CogFlow within your project:
 
 ```python
-import cogflow
-cf = cogflow.CogFramework()
+import cogflow as cf
+
+# Set up experiment tracking
+experiment_id = cf.set_experiment(experiment_name="My ML Project")
+
+# Enable automatic logging
+cf.autolog()  # General autologging
+cf.pytorch.autolog()  # Framework-specific autologging
+```
+
+## Working with Experiments and Runs
+
+CogFlow makes it simple to track experiments and organize your ML workflow:
+
+```python
+# Start a tracking run
+with cf.start_run(run_name='training_run') as run:
+    # Log parameters
+    cf.log_param("learning_rate", 0.001)
+    cf.log_param("batch_size", 64)
+    
+    # Train your model
+    model = train_model(data, epochs=10)
+    
+    # Log metrics
+    cf.log_metric("accuracy", 0.92)
+    cf.log_metric("loss", 0.08)
+    
+    # Save the model
+    model_info = cf.pyfunc.log_model(
+        artifact_path='my-model',
+        python_model=model,
+        artifacts={"config.txt": "path/to/config.txt"},
+        input_example=example_input
+    )
+    
+    print(f"Model saved at: {run.info.artifact_uri}/{model_info.artifact_path}")
 ```
 
 ## Workflow Integration
 
-Here’s how you can integrate CogFlow into your machine learning workflow, covering all the steps from data collection to model serving.
+Here's how you can integrate CogFlow into your machine learning workflow, covering all the steps from data collection to model serving.
 
 ### Step 1: Data Collection
 
@@ -91,7 +127,7 @@ def define_pipeline():
 
 ## Visualization and Tracking
 
-CogFlow integrates with Tensor Board to provide visualization of training metrics and model performance. Here’s how you can set up Tensor Board integration:
+CogFlow integrates with Tensor Board to provide visualization of training metrics and model performance. Here's how you can set up Tensor Board integration:
 
 ```python
 class TensorBoardIntegration:
