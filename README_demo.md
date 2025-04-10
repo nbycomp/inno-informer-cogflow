@@ -219,30 +219,9 @@ The architecture emphasizes modularity, allowing component replacement without a
 
 ## Experimental Results
 
-### Informer Experiment Tracking UI
+### CodeFlow Server
 
-![Experiment Tracking Dashboard](path/to/experiment_tracking_screenshot.png)
-*The experiment tracking interface displays comparative metrics across Informer model configurations, facilitating quantitative assessment of different attention mechanisms, sequence lengths, and model dimensionalities.*
-
-### Informer Model Registry
-
-![Model Registry](path/to/model_registry_screenshot.png)
-*The model registry presents versioned Informer models with their associated parameters and performance metrics, enabling model lineage tracking and structured version comparison.*
-
-### Informer Pipeline Execution
-
-![Pipeline Execution](path/to/pipeline_execution_screenshot.png)
-*The pipeline execution visualization depicts the preprocessing, training, and serving stages with their dependencies and execution status, providing transparency into workflow progression.*
-
-### Informer Model Serving Interface
-
-![Model Serving Dashboard](path/to/serving_dashboard_screenshot.png)
-*The serving dashboard presents operational metrics for the deployed Informer model, including request volume, latency distributions, and resource utilization patterns.*
-
-### End-to-End Time-Series Workflow
-
-![Complete Workflow](path/to/complete_workflow_screenshot.png)
-*The comprehensive workflow visualization demonstrates the integration of all system components from data ingestion through preprocessing, model training, and deployment to operational serving.*
+![image psd](https://github.com/user-attachments/assets/b6d393a4-f47b-4294-8fd5-7d42592210c8)
 
 ## Conclusion
 
