@@ -223,6 +223,10 @@ The architecture emphasizes modularity, allowing component replacement without a
 
 ![image psd](https://github.com/user-attachments/assets/b6d393a4-f47b-4294-8fd5-7d42592210c8)
 
+## Succesfull pipeline run
+
+![OnPaste 20250410-173540](https://github.com/user-attachments/assets/181cc977-a836-4c85-a6ef-89071d229d20)
+
 ## Conclusion
 
 This work demonstrates the effective integration of the Informer architecture with the Cogflow MLOps framework, creating a comprehensive solution for time-series forecasting at scale. The integration addresses the complete machine learning lifecycle from initial experimentation through production deployment and monitoring.
