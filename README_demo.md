@@ -233,6 +233,11 @@ The development environment played a crucial role in facilitating the integratio
 
 The CodeFlow environment significantly accelerated development by providing immediate feedback on code changes and pipeline execution. This environment includes built-in support for Docker containerization, enabling consistent development and production environments. The integration with Visual Studio Code provides familiar tools for code authoring, debugging, and version control, essential for collaborative development of complex MLOps pipelines.
 
+### View of the in-environment IDE
+
+![image](https://github.com/user-attachments/assets/01763f7d-a80c-410c-ae60-341e1a91cdb4)
+
+
 ### Successful Pipeline Run
 
 After completing the implementation, we executed the full pipeline to validate the end-to-end workflow. Figure 2 demonstrates a successful pipeline run with all components executing as expected.
