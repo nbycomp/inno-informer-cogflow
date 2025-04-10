@@ -225,7 +225,8 @@ The architecture emphasizes modularity, allowing component replacement without a
 
 ## Succesfull pipeline run
 
-![OnPaste 20250410-173540](https://github.com/user-attachments/assets/181cc977-a836-4c85-a6ef-89071d229d20)
+![OnPaste 20250410-173615](https://github.com/user-attachments/assets/712aa2e4-ae6c-42b7-bbe5-088598adf329)
+
 
 ## Conclusion
 
