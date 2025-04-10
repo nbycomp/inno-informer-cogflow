@@ -235,22 +235,27 @@ The CodeFlow environment significantly accelerated development by providing imme
 
 ### View of the in-environment IDE
 
-![image](https://github.com/user-attachments/assets/01763f7d-a80c-410c-ae60-341e1a91cdb4)
+The Cogflow environment provides a fully-featured IDE for model development and pipeline construction. Figure 2 shows the development interface with active code editing capabilities.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/01763f7d-a80c-410c-ae60-341e1a91cdb4" alt="In-environment IDE">
+</p>
+
+*Figure 2: The integrated development environment within Cogflow. This specialized IDE provides direct access to the Informer model implementation, pipeline definition tools, and deployment configurations. The environment combines code editing, terminal access, and file management capabilities in a unified interface, streamlining the development workflow for time-series forecasting applications.*
+
+This in-environment IDE enables seamless transition between code development and execution, with specialized tools for debugging machine learning pipelines. The environment maintains persistent storage for project files and provides integrated terminal access for command-line operations. This unified interface significantly reduces the friction in the development cycle, allowing for rapid iteration on Informer model implementation and pipeline configuration.
 
 ### Successful Pipeline Run
 
-After completing the implementation, we executed the full pipeline to validate the end-to-end workflow. Figure 2 demonstrates a successful pipeline run with all components executing as expected.
+After completing the implementation, we executed the full pipeline to validate the end-to-end workflow. Figure 3 demonstrates a successful pipeline run with all components executing as expected.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/712aa2e4-ae6c-42b7-bbe5-088598adf329" alt="Successful Pipeline Execution" width="33%">
 </p>
 
-*Figure 2: Visualization of a successfully completed Informer pipeline execution. The graphical representation illustrates the sequential execution of pipeline components: preprocessing (data preparation), training (Informer model training), and serving (model deployment). Green completion indicators confirm successful execution of each component, demonstrating the end-to-end operationalization of the Informer model within the Cogflow framework. This visualization validates the seamless integration between the advanced time-series forecasting capabilities of Informer and the robust MLOps infrastructure provided by Cogflow.*
+*Figure 3: Visualization of a successfully completed Informer pipeline execution. The graphical representation illustrates the sequential execution of pipeline components: preprocessing (data preparation), training (Informer model training), and serving (model deployment). Green completion indicators confirm successful execution of each component, demonstrating the end-to-end operationalization of the Informer model within the Cogflow framework. This visualization validates the seamless integration between the advanced time-series forecasting capabilities of Informer and the robust MLOps infrastructure provided by Cogflow.*
 
 This successful execution validates several key aspects of the integration. First, it confirms that the containerized components can properly access and process the required data. Second, it demonstrates that the Informer model can be successfully trained within the Cogflow framework. Third, it shows that the trained model can be automatically registered and deployed as an inference service. The green completion indicators for each component confirm that all stages executed without errors, validating the robustness of the integration.
-
-Performance evaluation of the deployed Informer model revealed competitive forecasting accuracy on the test dataset. The model achieved an RMSE of 0.127 and MAE of 0.092 on the CPU utilization prediction task, comparing favorably with traditional forecasting methods like ARIMA (RMSE: 0.198, MAE: 0.156) and Prophet (RMSE: 0.163, MAE: 0.124). The integration also maintained excellent serving performance, with average prediction latency under 120ms even under load testing of 100 concurrent requests.
 
 ## Conclusion
 
