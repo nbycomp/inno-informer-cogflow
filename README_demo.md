@@ -82,40 +82,61 @@ deployment = cf.ModelServing.deploy(
 
 ### 1.2 Implementation Examples
 
-Before diving into the specific implementation components, it's important to understand how the Cognitive Framework (CF) is utilized throughout the pipeline. The CF provides key functionalities that we'll use across all components:
+The implementation is structured as a CF pipeline that orchestrates three main components. Before diving into the specific components, let's understand the pipeline structure:
 
-- Experiment tracking and logging via `cf.set_experiment()` and `cf.log_metric()`
-- Model management through `cf.pyfunc.PythonModel` base class
-- Automated logging with `cf.pytorch.autolog()`
-- Model serving capabilities via `cf.ModelServing`
+```python
+@cf.pipeline(name="informer-pipeline", description="Informer Time-Series Forecasting Pipeline")
+def informer_pipeline(file, isvc):
+    # Preprocessing stage
+    preprocess_task = preprocess_op(file=file)
+    
+    # Training stage
+    train_task = training_op(
+        file=preprocess_task.outputs['output'],
+        args=preprocess_task.outputs['args']
+    )
+    
+    # Serving stage
+    serve_task = kserve_op(model_uri=train_task.output, name=isvc)
+    serve_task.after(train_task)
+```
 
-Our implementation consists of three main components, each leveraging CF's capabilities:
-
-1. Data Preprocessing Framework
-2. Model Training System
-3. Deployment Infrastructure
-
-Let's examine each component in detail:
+Each component is created as a CF component using:
+```python
+component_op = cf.create_component_from_func(
+    func=component_function,
+    output_component_file='component.yaml',
+    base_image='burntt/nby-cogflow-informer:latest',
+    packages_to_install=[]
+)
+```
 
 #### 1.2.1 Data Preprocessing Framework
 
-The data preprocessing component implements a systematic approach to preparing time-series data for the Informer architecture:
+The preprocessing component handles data preparation and configuration:
 
 ```python
-def preprocess(file_path: cf.InputPath('CSV'), output_file: cf.OutputPath('parquet'), args: cf.OutputPath('json')):
-    import pandas as pd
-    import json
-    
-    # Read the CSV file
+def preprocess(file_path: cf.InputPath('CSV'), 
+              output_file: cf.OutputPath('parquet'), 
+              args: cf.OutputPath('json')):
+    # Load and convert data
     df = pd.read_csv(file_path, header=0, sep=";")
     
-    # Save processed data as parquet
+    # Track directory structure
+    directory_data = {
+        'exp': os.listdir('exp'),
+        'models': os.listdir('models'),
+        'utils': os.listdir('utils'),
+        'data': os.listdir('data')
+    }
+    df['directory_data'] = directory_data
     df.to_parquet(output_file)
     
     # Configure Informer hyperparameters
     args_dict = {
+        'experiment_name': 'small_exp_1',
         'model': 'informer',
-        'data': 'alibaba_pod', 
+        'data': 'alibaba_pod',
         'seq_len': 12,
         'label_len': 12,
         'pred_len': 6,
@@ -126,86 +147,71 @@ def preprocess(file_path: cf.InputPath('CSV'), output_file: cf.OutputPath('parqu
         'n_heads': 4,
         'e_layers': 1,
         'd_layers': 1,
-        # Additional parameters...
+        'd_ff': 128,
+        # Additional configuration parameters...
     }
-    
-    with open(args, 'w') as f:
-        json.dump(args_dict, f)
 ```
-
-This preprocessing framework encompasses data loading, conversion, and hyperparameter configuration. The data loading function reads time-series data from CSV formats, accommodating various delimiter configurations to maximize compatibility with different data sources. The conversion process transforms the input data into an efficient parquet format, significantly reducing storage requirements and accelerating subsequent processing stages.
-
-The hyperparameter configuration establishes the Informer model architecture with parameter settings appropriate for the specific forecasting task. Critical parameters include the sequence length (historical context window), label length (decoder overlap), and prediction length (forecast horizon). Additional parameters configure the model dimensions, attention mechanisms, and layer structures.
 
 #### 1.2.2 Model Training System
 
-The training system implements a comprehensive approach to model training and evaluation:
+The training component implements comprehensive model training and evaluation:
 
 ```python
 def training(file_path: cf.InputPath('parquet'), args: cf.InputPath('json'))->str:
-    import cogflow as cf
-    import torch
+    # Setup environment and dependencies
+    sys.path.extend(['/', '/exp', '/models', '/utils'])
     
-    # Load parameters
-    with open(args, 'r') as f:
-        args = argparse.Namespace(**json.load(f))
-    
-    # Enable experiment tracking
+    # Initialize experiment tracking
     cf.autolog()
     cf.pytorch.autolog()
     experiment_id = cf.set_experiment(
-        experiment_name="Custom Model Informer Time-Series",
+        experiment_name="Custom Model Informer Time-Series"
     )
     
-    with cf.start_run(run_name='custom_model_run_informer') as run:
-        # Configure model settings
-        setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(
-            args.model, args.data, args.features, args.seq_len, args.label_len, args.pred_len, 
-            args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, 
-            args.attn, args.factor, args.embed, args.distil, args.mix, args.des, ii
-        )
-        
-        # Log key Informer parameters
-        cf.log_param("seq_len", args.seq_len)
-        cf.log_param("n_heads", args.n_heads)
-        cf.log_param("enc_lay", args.e_layers)
-        cf.log_param("pred_len", args.pred_len)
-        
-        # Train Informer model
-        exp = Exp_Informer(args)
-        model = exp.train(setting)
-        
-        # Evaluate model performance
-        test_results = exp.test(setting)
-        cf.log_metric("mae", test_results['mae'])
-        cf.log_metric("mse", test_results['mse'])
-        cf.log_metric("rmse", test_results['rmse'])
-        
-        # Log model with signature
-        model_info = cf.pyfunc.log_model(
-            artifact_path='informer-alibaba-pod',
-            python_model=exp,
-            artifacts={"args.txt": args_file_path},
-            input_example=input_df,
-            signature=signature
-        )
-    
-    return f"{run.info.artifact_uri}/{model_info.artifact_path}"
+    # Training loop with error handling
+    try:
+        with cf.start_run(run_name='custom_model_run_informer', nested=True) as run:
+            # Configure model settings
+            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(...)
+            
+            # Log parameters
+            cf.log_param("seq_len", args.seq_len)
+            cf.log_param("n_heads", args.n_heads)
+            cf.log_param("enc_lay", args.e_layers)
+            cf.log_param("pred_len", args.pred_len)
+            
+            # Train and evaluate
+            model = exp.train(setting)
+            test_results = exp.test(setting)
+            
+            # Log metrics
+            cf.log_metric("mae", test_results['mae'])
+            cf.log_metric("mse", test_results['mse'])
+            cf.log_metric("rmse", test_results['rmse'])
+            cf.log_metric("r2", test_results['r2'])
+            
+            # Save model
+            model_info = cf.pyfunc.log_model(
+                artifact_path='informer-alibaba-pod',
+                python_model=exp,
+                artifacts=artifacts,
+                input_example=input_df,
+                signature=signature
+            )
 ```
-
-The training system utilizes automatic logging to capture all relevant model parameters, gradients, and metrics. This comprehensive logging enables detailed post-training analysis and comparison between model variants. The experiment organization framework groups related runs under a unified experiment, facilitating systematic exploration of the parameter space.
-
-Performance evaluation occurs automatically upon training completion, computing multiple error metrics to provide a comprehensive assessment of model quality. These metrics include Mean Absolute Error (MAE), Mean Squared Error (MSE), Root Mean Squared Error (RMSE), and coefficient of determination (R²). The system supports hardware acceleration through GPU integration when available, substantially reducing training time for complex models.
-
-The training process implements early stopping mechanisms based on validation metrics, preventing overfitting and unnecessary computation. Checkpointing functionality preserves the best model version based on validation performance, ensuring that the final model represents optimal generalization capability rather than potentially overfitted later iterations.
 
 #### 1.2.3 Deployment Infrastructure
 
-The deployment infrastructure enables seamless transition from experimental models to production services:
+The serving component implements KServe-based model deployment:
 
 ```python
 def serving(model_uri, name):
-    # Create Inference Service for Informer model
+    # Initialize Kubernetes client
+    config.load_incluster_config()
+    api_instance = client.CustomObjectsApi()
+    current_namespace = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read()
+    
+    # Create inference service
     inference_service = {
         "apiVersion": "serving.kserve.io/v1beta1",
         "kind": "InferenceService",
@@ -220,7 +226,7 @@ def serving(model_uri, name):
         }
     }
     
-    # Deploy the service
+    # Deploy service
     api_instance.create_namespaced_custom_object(
         group="serving.kserve.io",
         version="v1beta1",
@@ -228,78 +234,44 @@ def serving(model_uri, name):
         plural="inferenceservices",
         body=inference_service
     )
-    
-    return "Model serving endpoint: " + name
 ```
 
-The deployment infrastructure leverages KServe to create production-ready REST API endpoints for Informer models. The Kubernetes integration ensures scalability and resilience in production environments, with automatic scaling based on request volume. Resource utilization is optimized through request throttling mechanisms that prevent service overload while maintaining responsive performance.
+#### 1.2.4 Pipeline Execution
 
-The infrastructure implements continuous health monitoring through automated checks, detecting potential issues before they impact service quality. Versioning support enables sophisticated deployment strategies including A/B testing and canary deployments, facilitating safe introduction of model updates.
-
-The resulting service provides a standardized RESTful API interface for forecasting requests, supporting both individual and batch prediction modes. Real-time monitoring tracks service performance metrics including request latency, throughput, and resource utilization. Authentication mechanisms ensure secure access to the forecasting service in production environments.
-
-#### 1.2.4 Client Usage and Integration
-
-Once deployed, the Informer model can be accessed through a REST API endpoint. Here's how clients can interact with the deployed model:
+The pipeline can be executed using the CF client:
 
 ```python
-# Get an inference client
-client = cf.InferenceClient(
-    endpoint_url=deployment.endpoint_url,
-    auth_token="your_auth_token"
+client = cf.client()
+client.create_run_from_pipeline_func(
+    informer_pipeline,
+    arguments={
+        "file": "/data/processed_data.csv",
+        "isvc": "informer-serving-inference"
+    }
 )
-
-# Example time-series data
-input_data = {
-    'timestamps': [...],  # Historical timestamps
-    'values': [...],      # Historical values
-    'pred_length': 24     # Number of future points to predict
-}
-
-# Get forecasting prediction
-result = client.predict(input_data)
-forecast = result['predictions']
-
-print(f"Forecasted values: {forecast}")
 ```
 
-#### 1.2.5 Monitoring and Visualization
+#### 1.2.5 Monitoring and Performance Metrics
 
-The CF platform provides comprehensive monitoring and visualization capabilities for tracking model performance:
+The implementation tracks several key metrics:
 
-1. **Real-time Metrics Dashboard**:
-   - Model inference latency
-   - Throughput statistics
-   - Resource utilization (CPU, memory, GPU)
-   - Prediction accuracy metrics
+1. **Time Series Metrics**:
+   - Mean Absolute Error (MAE)
+   - Mean Squared Error (MSE)
+   - Root Mean Squared Error (RMSE)
+   - R² Coefficient
 
-2. **TensorBoard Integration**:
-   ```python
-   # Compare performance across different runs
-   comparison = cf.compare_runs(
-       run_ids=["run1", "run2", "run3"],
-       metrics=["mae", "mse", "rmse"]
-   )
-   cf.plot_comparison(comparison)
-   ```
+2. **Automatic Logging**:
+```python
+cf.autolog()  # Enable automatic logging
+cf.pytorch.autolog()  # PyTorch-specific logging
 
-3. **Automated Alerts**:
-   - Performance degradation detection
-   - Resource utilization thresholds
-   - Error rate monitoring
-   - Model drift detection
-
-4. **Custom Visualization Endpoints**:
-   ```python
-   # Create custom visualization endpoint
-   @cf.visualization
-   def plot_forecast(model_output):
-       import matplotlib.pyplot as plt
-       plt.figure(figsize=(12, 6))
-       plt.plot(model_output['timestamps'], model_output['predictions'])
-       plt.title('Time Series Forecast')
-       return plt
-   ```
+# Log specific metrics
+cf.log_metric("mae", test_results['mae'])
+cf.log_metric("mse", test_results['mse'])
+cf.log_metric("rmse", test_results['rmse'])
+cf.log_metric("r2", test_results['r2'])
+```
 
 ### 1.3 Experimental Results and Validation
 
@@ -341,15 +313,8 @@ After completing the implementation, we executed the full pipeline to validate t
 
 This successful execution validates several key aspects of the integration. First, it confirms that the containerized components can properly access and process the required data. Second, it demonstrates that the Informer model can be successfully trained within the Cogflow framework. Third, it shows that the trained model can be automatically registered and deployed as an inference service. The green completion indicators for each component confirm that all stages executed without errors, validating the robustness of the integration.
 
-### 1.4 Additional Resources and Examples
 
-For more examples and detailed documentation:
-- Model training notebooks: `/examples/training/`
-- Deployment configurations: `/examples/deployment/`
-- Integration tests: `/tests/integration/`
-- API documentation: `/docs/api/`
-
-### 1.5 Conclusion
+### 1.4 Conclusion
 
 This work demonstrates the effective integration of the Informer architecture with the Cogflow MLOps framework, creating a comprehensive solution for time-series forecasting at scale. The integration addresses the complete machine learning lifecycle from initial experimentation through production deployment and monitoring.
 
