@@ -273,6 +273,16 @@ cf.log_metric("rmse", test_results['rmse'])
 cf.log_metric("r2", test_results['r2'])
 ```
 
+#### 1.2.6 Error Handling and Reliability
+
+The implementation incorporates comprehensive error handling mechanisms across all components to ensure robust operation in production environments. In the training component, nested exception handling manages both the experiment run creation and the training process itself. If the primary training attempt fails, a fallback mechanism automatically initiates a new run with fresh configuration, ensuring continuity of the pipeline execution.
+
+For the serving infrastructure, the implementation includes sophisticated Kubernetes service management. Before deploying new model versions, the system attempts to gracefully remove existing services, handling potential race conditions and resource conflicts. This cleanup process includes appropriate error categorization, where 404 (Not Found) errors are safely ignored while other exceptions trigger appropriate warning messages.
+
+Model signature handling represents another critical reliability feature. During model registration, the system attempts to infer and validate the model's signature using example inputs and outputs. If signature inference fails, the system gracefully degrades by continuing without a signature while logging the issue for investigation. This approach ensures that model deployment can proceed even when facing non-critical validation issues.
+
+These reliability features are complemented by comprehensive logging throughout the pipeline. Each component captures relevant error states and operational metrics, enabling both real-time monitoring and post-hoc analysis of pipeline execution. This systematic approach to error handling and logging ensures that the system remains maintainable and debuggable in production settings.
+
 ### 1.3 Experimental Results and Validation
 
 The integration of Informer with Cogflow was validated through a comprehensive experimental evaluation. We utilized a real-world time-series dataset from Alibaba Cloud, containing CPU utilization metrics that present challenging forecasting scenarios with multiple seasonalities and irregular patterns.
@@ -313,11 +323,32 @@ After completing the implementation, we executed the full pipeline to validate t
 
 This successful execution validates several key aspects of the integration. First, it confirms that the containerized components can properly access and process the required data. Second, it demonstrates that the Informer model can be successfully trained within the Cogflow framework. Third, it shows that the trained model can be automatically registered and deployed as an inference service. The green completion indicators for each component confirm that all stages executed without errors, validating the robustness of the integration.
 
-
 ### 1.4 Conclusion
 
-This work demonstrates the effective integration of the Informer architecture with the Cogflow MLOps framework, creating a comprehensive solution for time-series forecasting at scale. The integration addresses the complete machine learning lifecycle from initial experimentation through production deployment and monitoring.
+This work demonstrates the effective integration of the Informer architecture with the Cogflow MLOps framework, creating a comprehensive solution for time-series forecasting at scale. Key achievements include:
 
-The implementation achieves several significant benefits: reduced development time through streamlined experimentation; improved model quality through systematic parameter exploration; reproducible results through comprehensive versioning; simplified deployment through automated pipelines; production monitoring through integrated observability; scalable architecture through containerized components; and robust governance through complete model lineage tracking.
+1. **Complete Pipeline Implementation**:
+   - Modular components created using `cf.create_component_from_func`
+   - Containerized execution with `burntt/nby-cogflow-informer:latest` base image
+   - Automated data flow between components
+   - End-to-end pipeline from data preprocessing to model serving
 
-By synthesizing the advanced capabilities of the Informer architecture with the comprehensive MLOps functionality of Cogflow, this integration enables organizations to implement state-of-the-art time-series forecasting while maintaining production-grade reliability, scalability, and governance. The resulting system demonstrates how sophisticated deep learning architectures can be effectively operationalized in enterprise environments.
+2. **Robust Error Handling**:
+   - Nested exception handling in training with fallback mechanisms
+   - Kubernetes service management with clean-up and deployment safeguards
+   - Signature validation and model verification
+   - Comprehensive error logging and reporting
+
+3. **Production-Ready Features**:
+   - Comprehensive metric logging (MAE, MSE, RMSE, R²)
+   - KServe integration for scalable serving
+   - Automated experiment tracking through CF
+   - Real-time monitoring capabilities
+
+4. **Practical Considerations**:
+   - GPU support with multi-GPU configuration
+   - Configurable hyperparameters for model optimization
+   - Directory structure management for organized deployment
+   - Efficient data format conversion (CSV to Parquet)
+
+The implementation provides a template for operationalizing complex deep learning models while maintaining production-grade reliability and monitoring capabilities. The integration addresses the complete machine learning lifecycle from initial experimentation through production deployment and monitoring, demonstrating how sophisticated deep learning architectures can be effectively operationalized in enterprise environments.
