@@ -11,11 +11,11 @@ This implementation demonstrates a comprehensive integration between the Informe
 
 This documentation provides detailed guidance on implementing and deploying time-series forecasting solutions using the Informer-CF integration, suitable for both development and production environments.
 
-## 1. Cogflow Integration with Informer: Time-Series Forecasting MLOps
+## Cogflow Integration with Informer: Time-Series Forecasting MLOps
 
-### 1.1 Time-Series Forecasting with Informer
+### Time-Series Forecasting with Informer
 
-#### 1.1.1 Informer Architecture Overview
+#### Informer Architecture Overview
 
 The Informer model architecture utilized in this integration employs several innovative components that enhance time-series forecasting capabilities. The ProbSparse Self-attention mechanism achieves O(L log L) time and memory complexity, significantly improving efficiency for long input sequences. Self-attention distilling progressively extracts dominant attention patterns by removing redundancies, further enhancing computational efficiency.
 
@@ -28,7 +28,7 @@ Key features include:
 - Support for both univariate and multivariate data
 - Efficient processing of long input sequences
 
-#### 1.1.2 Integration with Cognitive Framework
+#### Integration with Cognitive Framework
 
 The integration with CF provides a comprehensive MLOps solution for deploying Informer models. Key integration points include:
 
@@ -80,7 +80,7 @@ deployment = cf.ModelServing.deploy(
 )
 ```
 
-### 1.2 Implementation Examples
+### Implementation Examples
 
 The implementation is structured as a CF pipeline that orchestrates three main components. Before diving into the specific components, let's understand the pipeline structure:
 
@@ -111,7 +111,7 @@ component_op = cf.create_component_from_func(
 )
 ```
 
-#### 1.2.1 Data Preprocessing Framework
+#### Data Preprocessing Framework
 
 The preprocessing component handles data preparation and configuration:
 
@@ -152,7 +152,7 @@ def preprocess(file_path: cf.InputPath('CSV'),
     }
 ```
 
-#### 1.2.2 Model Training System
+#### Model Training System
 
 The training component implements comprehensive model training and evaluation:
 
@@ -200,7 +200,7 @@ def training(file_path: cf.InputPath('parquet'), args: cf.InputPath('json'))->st
             )
 ```
 
-#### 1.2.3 Deployment Infrastructure
+#### Deployment Infrastructure
 
 The serving component implements KServe-based model deployment:
 
@@ -236,7 +236,7 @@ def serving(model_uri, name):
     )
 ```
 
-#### 1.2.4 Pipeline Execution
+#### Pipeline Execution
 
 The pipeline can be executed using the CF client:
 
@@ -251,7 +251,7 @@ client.create_run_from_pipeline_func(
 )
 ```
 
-#### 1.2.5 Monitoring and Performance Metrics
+#### Monitoring and Performance Metrics
 
 The implementation tracks several key metrics:
 
@@ -273,7 +273,7 @@ cf.log_metric("rmse", test_results['rmse'])
 cf.log_metric("r2", test_results['r2'])
 ```
 
-#### 1.2.6 Error Handling and Reliability
+#### Error Handling and Reliability
 
 The implementation incorporates comprehensive error handling mechanisms across all components to ensure robust operation in production environments. In the training component, nested exception handling manages both the experiment run creation and the training process itself. If the primary training attempt fails, a fallback mechanism automatically initiates a new run with fresh configuration, ensuring continuity of the pipeline execution.
 
@@ -283,11 +283,11 @@ Model signature handling represents another critical reliability feature. During
 
 These reliability features are complemented by comprehensive logging throughout the pipeline. Each component captures relevant error states and operational metrics, enabling both real-time monitoring and post-hoc analysis of pipeline execution. This systematic approach to error handling and logging ensures that the system remains maintainable and debuggable in production settings.
 
-### 1.3 Experimental Results and Validation
+### Experimental Results and Validation
 
 The integration of Informer with Cogflow was validated through a comprehensive experimental evaluation. We utilized a real-world time-series dataset from Alibaba Cloud, containing CPU utilization metrics that present challenging forecasting scenarios with multiple seasonalities and irregular patterns.
 
-#### 1.3.1 CodeFlow Server
+#### CodeFlow Server
 
 The development environment played a crucial role in facilitating the integration. Figure 1 shows the CodeFlow Server interface, which provides a seamless development experience for implementing the Informer-Cogflow integration.
 
@@ -299,7 +299,7 @@ The development environment played a crucial role in facilitating the integratio
 
 The CodeFlow environment significantly accelerated development by providing immediate feedback on code changes and pipeline execution. This environment includes built-in support for Docker containerization, enabling consistent development and production environments. The integration with Visual Studio Code provides familiar tools for code authoring, debugging, and version control, essential for collaborative development of complex MLOps pipelines.
 
-#### 1.3.2 Cogflow's Integrated Development Environment
+#### Cogflow's Integrated Development Environment
 
 The Cogflow environment provides a fully-featured IDE for model development and pipeline construction. Figure 2 shows the development interface with active code editing capabilities.
 
@@ -311,7 +311,7 @@ The Cogflow environment provides a fully-featured IDE for model development and 
 
 This in-environment IDE enables seamless transition between code development and execution, with specialized tools for debugging machine learning pipelines. The environment maintains persistent storage for project files and provides integrated terminal access for command-line operations. This unified interface significantly reduces the friction in the development cycle, allowing for rapid iteration on Informer model implementation and pipeline configuration.
 
-#### 1.3.3 Successful Pipeline Run
+#### Successful Pipeline Run
 
 After completing the implementation, we executed the full pipeline to validate the end-to-end workflow. Figure 3 demonstrates a successful pipeline run with all components executing as expected.
 
@@ -323,7 +323,7 @@ After completing the implementation, we executed the full pipeline to validate t
 
 This successful execution validates several key aspects of the integration. First, it confirms that the containerized components can properly access and process the required data. Second, it demonstrates that the Informer model can be successfully trained within the Cogflow framework. Third, it shows that the trained model can be automatically registered and deployed as an inference service. The green completion indicators for each component confirm that all stages executed without errors, validating the robustness of the integration.
 
-### 1.4 Conclusion
+### Conclusion
 
 This work demonstrates the effective integration of the Informer architecture with the Cogflow MLOps framework, creating a comprehensive solution for time-series forecasting at scale. Key achievements include:
 
