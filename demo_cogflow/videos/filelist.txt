@@ -1,0 +1,8 @@
+file '0_verge_intro_aac.mkv'
+file '1_introduction_and_overview_aac.mkv'
+file '2_login_explain_overview_aac.mkv'
+file '3_open_cf_server_code_and_run_aac.mkv'
+file '4_pipeline_in_process_aac.mkv'
+file '5_pipeline_serving_success_1280_720_aac.mkv'
+file '6_outro_aac.mkv'
+file '7_final_slide_aac.mkv'
