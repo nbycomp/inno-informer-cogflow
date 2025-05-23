@@ -1,6 +1,6 @@
 1
 00:00:00,640 --> 00:00:04,200
-Hello, I'm Behrend Groeth from Nearby Computing from
+Hello, I'm Berend Gort from Nearby Computing from
 
 2
 00:00:04,700 --> 00:00:08,200
@@ -8,7 +8,7 @@ the Department of AI Research and today I will be presenting
 
 3
 00:00:08,700 --> 00:00:12,760
-to you a demo for the cognitive framework where we use
+to you a demo for the Cognitive Framework where we use
 
 4
 00:00:13,260 --> 00:00:17,840
@@ -24,23 +24,23 @@ it for example some CPU data and it will respond with you
 
 7
 00:00:26,420 --> 00:00:30,340
-to you with some predictions. This is part of the verge project
+to you with some predictions. This is part of the Verge Project
 
 8
 00:00:30,580 --> 00:00:34,180
-work package 5 deliverable 2.3
+Work Package 5 Deliverable 2.3.
 
 9
 00:00:35,860 --> 00:00:37,860
-so what is the cognitive framework?
+So what is the Cognitive Framework?
 
 10
 00:00:38,820 --> 00:00:42,499
-Here we have a scenario where we have a prediction setup with the cognitive
+Here we have a scenario where we have a prediction setup with the Cognitive
 
 11
 00:00:42,500 --> 00:00:45,980
-framework used. As for
+Framework used. As for
 
 12
 00:00:46,480 --> 00:00:50,020
@@ -56,7 +56,7 @@ uploading models and serving models.
 
 15
 00:00:58,170 --> 00:01:01,490
-It's possible through the cogflow library to then through
+It's possible through the CogFlow library to then through
 
 16
 00:01:01,990 --> 00:01:04,570
@@ -144,7 +144,7 @@ to the notebooks and here we find our work environment
 
 37
 00:02:28,030 --> 00:02:31,630
-which is called the nbuycock code and we will
+which is called the Nbuycock code and we will
 
 38
 00:02:31,790 --> 00:02:35,630
@@ -160,7 +160,7 @@ code. All of this other redundant code
 
 41
 00:02:44,410 --> 00:02:48,910
-is the model and the experiment, the input data and some
+is the model and the experiment, the input data, and some
 
 42
 00:02:49,410 --> 00:02:52,350
@@ -172,15 +172,15 @@ embedder, encoder, but that's not very significant.
 
 44
 00:02:56,310 --> 00:02:59,830
-What's significant is this file run cogflow server.
+What's significant is this file, run_cogflow_server.
 
 45
 00:03:00,310 --> 00:03:03,760
-As you can see it imports CogFlow as CF and
+As you can see, it imports CogFlow as CF and
 
 46
 00:03:04,260 --> 00:03:08,320
-if we control FCF throughout the document, we use
+if we control-F CF throughout the document, we use
 
 47
 00:03:08,820 --> 00:03:12,640
@@ -192,15 +192,15 @@ log the experiment, to set the experiment name, to start the
 
 49
 00:03:17,140 --> 00:03:20,400
-run, to log some hyper parameters of this model,
+run, to log some hyperparameters of this model,
 
 50
 00:03:20,480 --> 00:03:24,440
-to log some metrics. Let's see what else and
+to log some metrics. Let's see what else, and
 
 51
 00:03:24,940 --> 00:03:28,280
-of course to finally infer the model signature, which means
+of course, to finally infer the model signature, which means
 
 52
 00:03:28,780 --> 00:03:32,630
@@ -208,39 +208,39 @@ that we later also know how to send inference
 
 53
 00:03:33,130 --> 00:03:37,790
-requests to the model and to lock the model into
+requests to the model and to log the model into
 
 54
 00:03:38,290 --> 00:03:40,190
-the cognitive framework.
+the Cognitive Framework.
 
 55
 00:03:42,590 --> 00:03:46,430
-Then we have some exception and then
+Then we have some exception, and then
 
 56
 00:03:46,510 --> 00:03:50,670
-we have a couple of pipeline functions and
+we have a couple of pipeline functions, and
 
 57
 00:03:50,910 --> 00:03:54,230
-in order to show that I'll first go to the end and here is the
+in order to show that, I'll first go to the end, and here is the
 
 58
 00:03:54,730 --> 00:03:58,340
-complete pipeline. Basically it's exists. This is the CogFlow
+complete pipeline. Basically, it exists. This is the CogFlow
 
 59
 00:03:58,840 --> 00:04:02,260
-pipeline called Informer pipeline where we integrate the informer time series
+pipeline called Informer Pipeline, where we integrate the Informer time series
 
 60
 00:04:02,760 --> 00:04:06,700
-forecasting pipeline. Step one Pre process data cleaning
+forecasting pipeline. Step one: Preprocess data cleaning,
 
 61
 00:04:06,780 --> 00:04:10,300
-data downloading data conversion Step two
+data downloading, data conversion. Step two:
 
 62
 00:04:10,380 --> 00:04:14,460
@@ -248,7 +248,7 @@ Training task where we input the output
 
 63
 00:04:14,960 --> 00:04:18,300
-of the pre process task and finally use
+of the preprocess task and finally use
 
 64
 00:04:18,800 --> 00:04:22,030
@@ -260,19 +260,19 @@ an inference microservice. We create a CogFlow
 
 66
 00:04:26,970 --> 00:04:31,270
-client and then run the full pipeline. Before in
+client and then run the full pipeline. Before, in
 
 67
 00:04:31,770 --> 00:04:35,670
-the code these individual larger functions are defined and
+the code, these individual larger functions are defined, and
 
 68
 00:04:36,170 --> 00:04:40,350
-I will not go into them simply to run this. We go python3,
+I will not go into them. Simply, to run this, we go python3,
 
 69
 00:04:40,590 --> 00:04:46,230
-run cogflowserver py Enter then
+run_cogflowserver.py, Enter, then
 
 70
 00:04:46,730 --> 00:04:50,400
@@ -280,7 +280,7 @@ we go back to the interface, we can take a look at runs
 
 71
 00:04:50,960 --> 00:04:54,360
-where now our informer pipeline
+where now our Informer Pipeline
 
 72
 00:04:54,860 --> 00:04:59,040
