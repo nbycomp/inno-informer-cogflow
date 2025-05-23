@@ -1,0 +1,332 @@
+1
+00:00:00,480 --> 00:00:03,920
+Hello, I am Behrend Groth from the company Nearby
+
+2
+00:00:04,420 --> 00:00:08,680
+Computing. I'm from the Department of AI Research and
+
+3
+00:00:09,180 --> 00:00:13,200
+today I will be presenting to you a demo about the cognitive framework
+
+4
+00:00:14,640 --> 00:00:17,880
+where we use this framework to deploy some state of
+
+5
+00:00:18,380 --> 00:00:22,480
+the art time series forecasters. A time series forecaster
+
+6
+00:00:22,560 --> 00:00:25,840
+is when you send it for example some CPU data
+
+7
+00:00:25,920 --> 00:00:29,710
+and then it returns some predictions.
+
+8
+00:00:30,830 --> 00:00:34,110
+This is all deployed as a microservice and
+
+9
+00:00:34,590 --> 00:00:38,896
+this is a part of the verge work package. 5 deliverable
+
+10
+00:00:39,030 --> 00:00:43,430
+2.2 the edge for AI platform so
+
+11
+00:00:43,930 --> 00:00:47,750
+what is the cognitive framework? Here we have a scenario where we
+
+12
+00:00:48,250 --> 00:00:51,230
+have a prediction setup with the cognitive framework used.
+
+13
+00:00:52,920 --> 00:00:56,240
+As for me, I'm a machine learning engineer, but I could be working in
+
+14
+00:00:56,740 --> 00:01:00,760
+parallel to data scientists and deep learning engineers or other colleagues
+
+15
+00:01:01,260 --> 00:01:03,960
+interested in uploading models and serving models.
+
+16
+00:01:05,400 --> 00:01:08,760
+It's possible through the cogflow library to then through
+
+17
+00:01:09,260 --> 00:01:11,800
+your coding, upload a model into the cognitive framework,
+
+18
+00:01:13,080 --> 00:01:17,000
+which then uploads that to a tracking server.
+
+19
+00:01:18,530 --> 00:01:21,970
+From the tracking server, experimental results are saved
+
+20
+00:01:22,470 --> 00:01:25,090
+and recorded to a PostgreSQL database.
+
+21
+00:01:26,210 --> 00:01:29,970
+Also at the same time the artifacts like the model weights
+
+22
+00:01:30,470 --> 00:01:31,970
+are stored to an S3 bucket.
+
+23
+00:01:33,730 --> 00:01:36,930
+If you want a server model, you can also
+
+24
+00:01:37,430 --> 00:01:40,610
+do that with the CogFlow library where
+
+25
+00:01:41,110 --> 00:01:44,950
+you can identify an experiment by looking at the experiment experiment
+
+26
+00:01:45,450 --> 00:01:49,030
+values and then pull a model from the S3 storage.
+
+27
+00:01:51,110 --> 00:01:55,230
+The cognitive framework packages the model and then deploys
+
+28
+00:01:55,730 --> 00:01:58,150
+it in any particular manner the user wants.
+
+29
+00:01:59,030 --> 00:02:02,790
+So now we will log into the environment and here
+
+30
+00:02:02,870 --> 00:02:06,270
+we arrive in the HIRO overview edge
+
+31
+00:02:06,770 --> 00:02:10,070
+micro datacenters where we have home with all quick shortcuts.
+
+32
+00:02:10,679 --> 00:02:14,519
+Some notebooks work areas run experiments
+
+33
+00:02:15,079 --> 00:02:18,759
+experiments with KFP pipelines
+
+34
+00:02:19,319 --> 00:02:23,159
+like pipeline runs and maybe some recurring runs,
+
+35
+00:02:23,239 --> 00:02:27,079
+also volumes, tensorboards for data analytics
+
+36
+00:02:27,579 --> 00:02:30,839
+and an MLflow section. And now we will
+
+37
+00:02:31,339 --> 00:02:34,999
+go to the notebooks and here we find our work environment
+
+38
+00:02:35,399 --> 00:02:39,520
+which is called the nbuycock code and we will start
+
+39
+00:02:39,680 --> 00:02:43,640
+the server. Now the notebook has started and we can connect to
+
+40
+00:02:44,140 --> 00:02:47,040
+it. Now we will shortly go over the code.
+
+41
+00:02:49,040 --> 00:02:52,320
+All of this other redundant code is the model
+
+42
+00:02:52,820 --> 00:02:56,720
+and the experiment, the input data and some utility
+
+43
+00:02:57,220 --> 00:03:00,200
+functions. Here you can see the attention, decoder, embedder,
+
+44
+00:03:00,700 --> 00:03:04,640
+encoder, but that's not very significant. What's significant is
+
+45
+00:03:05,140 --> 00:03:09,100
+this file run cogflow server. As you can see it imports
+
+46
+00:03:09,600 --> 00:03:12,820
+cockflow as CF and if we ctrl f CF throughout the
+
+47
+00:03:13,320 --> 00:03:16,900
+document. We use the cogflow library
+
+48
+00:03:17,400 --> 00:03:20,860
+internally throughout this experiment to log the
+
+49
+00:03:21,360 --> 00:03:25,500
+experiment, to set the experiment name, to start the run, to log some
+
+50
+00:03:25,660 --> 00:03:29,180
+hyper parameters of this model, to log some Metrics.
+
+51
+00:03:29,660 --> 00:03:33,590
+Let's see what else. And of course to finally
+
+52
+00:03:34,090 --> 00:03:37,830
+infer the model signature, which means that we later on know
+
+53
+00:03:38,150 --> 00:03:41,750
+how to send inference requests to the model and to
+
+54
+00:03:42,070 --> 00:03:45,350
+log the model into the
+
+55
+00:03:46,150 --> 00:03:47,430
+cognitive framework,
+
+56
+00:03:49,830 --> 00:03:53,670
+then we have some exception and then
+
+57
+00:03:53,750 --> 00:03:57,920
+we have a couple of pipeline functions and
+
+58
+00:03:58,160 --> 00:04:01,480
+in order to show that I'll first go to the end and here is the
+
+59
+00:04:01,980 --> 00:04:05,960
+complete pipeline. Basically it's exists. This is the CogFlow pipeline
+
+60
+00:04:06,460 --> 00:04:10,160
+called Informer pipeline where we integrate the informer time series forecasting
+
+61
+00:04:10,660 --> 00:04:14,000
+pipeline. Step one Pre process data cleaning,
+
+62
+00:04:14,500 --> 00:04:18,640
+data downloading, data conversion Step two Training task
+
+63
+00:04:19,120 --> 00:04:22,760
+where we input the output of the pre processed
+
+64
+00:04:23,260 --> 00:04:26,890
+task and finally use the train task
+
+65
+00:04:27,390 --> 00:04:30,650
+to serve the model into an inference
+
+66
+00:04:31,150 --> 00:04:35,170
+microservice. We create a CogFlow client and then run
+
+67
+00:04:35,670 --> 00:04:39,730
+the full pipeline. Before in the code these
+
+68
+00:04:39,890 --> 00:04:44,090
+individual larger functions are defined and I will not go into
+
+69
+00:04:44,590 --> 00:04:47,650
+them simply to run this. We go Python 3,
+
+70
+00:04:47,810 --> 00:04:53,600
+run Cockflow, server Py Enter then
+
+71
+00:04:54,100 --> 00:04:57,760
+we go back to the interface, we can take a look at runs
+
+72
+00:04:58,320 --> 00:05:02,400
+where now our informer pipeline has appeared
+
+73
+00:05:02,480 --> 00:05:06,320
+and we can take a look at the pipeline. The individual
+
+74
+00:05:06,480 --> 00:05:10,040
+microservices for each function are being
+
+75
+00:05:10,540 --> 00:05:14,520
+spun up and executed. In a later stage we will see the
+
+76
+00:05:15,020 --> 00:05:19,110
+successful execution of the pipeline. As you can see the individual
+
+77
+00:05:19,610 --> 00:05:23,230
+steps, pre processing, training and serving, all executed in
+
+78
+00:05:23,730 --> 00:05:27,270
+sequence. And this means now we have an informer living
+
+79
+00:05:27,770 --> 00:05:31,670
+in this environment which is ready to
+
+80
+00:05:31,830 --> 00:05:35,830
+serve some inference, for example some API
+
+81
+00:05:35,990 --> 00:05:40,030
+request about some resource usage of some containers
+
+82
+00:05:40,530 --> 00:05:41,830
+or Edge or FOX servers.
+
+83
+00:05:44,400 --> 00:05:47,680
+That will be all. Thank you, I hope you enjoyed the demo.
+
