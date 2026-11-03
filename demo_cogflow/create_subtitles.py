@@ -12,7 +12,9 @@ class AssemblyAITranscriber:
     def __init__(self):
         self.project_id = "savvy-primacy-390419"  # Your Google Cloud project ID
         self.secret_id = "ASSEMBLY_AI"  # Your secret ID for AssemblyAI API key
-        self.api_key ="434aca4d1b1047f48b6d2b4bbbe5729e"
+        self.api_key = os.environ.get("ASSEMBLYAI_API_KEY")
+        if not self.api_key:
+            raise RuntimeError("ASSEMBLYAI_API_KEY is unset")
         aai.settings.api_key = self.api_key
         self.transcriber = aai.Transcriber()
         logging.info("AssemblyAI - Initialized with project ID: %s", self.project_id)
